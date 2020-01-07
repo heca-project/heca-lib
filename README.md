@@ -17,7 +17,7 @@ heca-lib is a blazingly fast Hebrew calender library. It's the backend behind th
 
 ```toml
     [dependencies]
-    heca-lib = "1.0"
+    heca-lib = "1.3"
 ```
 
 3. Import the types:
@@ -84,7 +84,7 @@ assert_eq!(HebrewYear::new(5779).unwrap().get_holidays(Location::Chul, &[TorahRe
 1. This library won't work for years before 3764 (4).
 2. I tested this library against hebcal for all Rosh Hashanas between 3764 and 9999 (4-6239). I also checked it for all Rosh Chodesh Adars in those years. However, I take no resposibility if you accidently keep Yom Tov on the wrong day!
 
-Current version: 1.0.3
+Current version: 1.3.1
 
 
 License: MIT

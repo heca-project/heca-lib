@@ -386,23 +386,47 @@ impl HebrewYear {
 
 #[test]
 fn test_get_molad() {
+    use chrono::prelude::*;
     let hebrew_year = HebrewYear::new(5780).unwrap();
     let p = hebrew_year.get_molad(HebrewMonth::Tishrei).unwrap();
-    assert_eq!(p, Molad{ day: Utc.ymd(2019,9,29).and_hms(5,50,0), remainder: 5 });
+    assert_eq!(
+        p,
+        Molad {
+            day: Utc.ymd(2019, 9, 29).and_hms(5, 50, 0),
+            remainder: 5
+        }
+    );
     let p = hebrew_year.get_molad(HebrewMonth::Cheshvan).unwrap();
-    assert_eq!(p, Molad{ day: Utc.ymd(2019,10,28).and_hms(18,34,0), remainder: 6 });
+    assert_eq!(
+        p,
+        Molad {
+            day: Utc.ymd(2019, 10, 28).and_hms(18, 34, 0),
+            remainder: 6
+        }
+    );
 
     let hebrew_year = HebrewYear::new(5781).unwrap();
     let p = hebrew_year.get_molad(HebrewMonth::Elul).unwrap();
-    assert_eq!(p, Molad{ day: Utc.ymd(2021,8,8).and_hms(10,43,0), remainder: 10 });
-
+    assert_eq!(
+        p,
+        Molad {
+            day: Utc.ymd(2021, 8, 8).and_hms(10, 43, 0),
+            remainder: 10
+        }
+    );
 
     //check error
     let hebrew_year = HebrewYear::new(5780).unwrap();
-    assert_eq!(hebrew_year.get_molad(HebrewMonth::Adar1), Err(ConversionError::IsNotLeapYear));
+    assert_eq!(
+        hebrew_year.get_molad(HebrewMonth::Adar1),
+        Err(ConversionError::IsNotLeapYear)
+    );
 
     let hebrew_year = HebrewYear::new(5779).unwrap();
-    assert_eq!(hebrew_year.get_molad(HebrewMonth::Adar), Err(ConversionError::IsLeapYear));
+    assert_eq!(
+        hebrew_year.get_molad(HebrewMonth::Adar),
+        Err(ConversionError::IsLeapYear)
+    );
 }
 
 /// Returns a HebrewDate on success, or a ConversionError on failure.
@@ -533,6 +557,7 @@ mod test {
     #[test]
     fn check_year_type() {
         use super::*;
+        use chrono::prelude::*;
 
         for i in 3765..9999 {
             println!("{}", i);

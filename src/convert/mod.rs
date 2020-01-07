@@ -1,4 +1,3 @@
-use chrono::prelude::*;
 use chrono::{DateTime, Duration, Utc};
 
 use crate::prelude::*;
@@ -180,6 +179,7 @@ mod tests {
     #[test]
     fn get_year() {
         use super::*;
+        use chrono::prelude::*;
         for j in 0..100 {
             let mut original_day = Utc.ymd(16 + j, 10, 4).and_hms(18, 0, 0);
             for _i in 1..366 {

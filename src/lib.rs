@@ -7,7 +7,7 @@
 //!
 //!```toml
 //!     [dependencies]
-//!     heca-lib = "1.0"
+//!     heca-lib = "1.3"
 //!```
 //!
 //! 2. Add the following to your crate root:

@@ -39,10 +39,10 @@ pub struct Molad {
 }
 
 impl Molad {
-    pub fn get_day_utc(&self) -> chrono::DateTime<Utc>{
+    pub fn get_day_utc(&self) -> chrono::DateTime<Utc> {
         self.day
     }
-    pub fn get_chalakim(&self) -> u16{
+    pub fn get_chalakim(&self) -> u16 {
         self.remainder
     }
 }

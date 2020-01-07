@@ -612,15 +612,14 @@ pub(crate) fn get_shabbos_list(
         parsha_list.push(Parsha::NitzavimVayelech);
     }
 
-    let return_val = regular_shabbosim_list
+    regular_shabbosim_list
         .iter()
         .enumerate()
         .map(|(i, &v)| TorahReadingDay {
             name: TorahReading::Shabbos(parsha_list[i]),
             day: v,
         })
-        .collect::<SmallVec<[TorahReadingDay; 256]>>();
-    return_val
+        .collect::<SmallVec<[TorahReadingDay; 256]>>()
 }
 
 pub(crate) fn get_special_parsha_list(year: HebrewYear) -> SmallVec<[TorahReadingDay; 256]> {

@@ -1,5 +1,5 @@
 use chrono::prelude::*;
-use chrono::{DateTime, Utc, Duration};
+use chrono::{DateTime, Duration, Utc};
 
 use crate::prelude::*;
 use serde::ser::SerializeStruct;

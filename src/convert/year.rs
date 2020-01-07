@@ -1,23 +1,27 @@
-use std::convert::TryFrom;
+use std::convert::{TryFrom, TryInto};
 
 use smallvec::*;
 
+use crate::convert::year::backend::{CHALAKIM_BETWEEN_MOLAD, FIRST_MOLAD};
 use crate::convert::*;
 use crate::holidays::get_chol_list;
 use crate::holidays::get_shabbos_list;
 use crate::holidays::get_special_parsha_list;
 use crate::holidays::get_yt_list;
+use chrono::{Duration, Utc};
 use std::num::NonZeroI8;
-use chrono::Datelike;
 
 pub(crate) mod backend;
+
 use crate::convert::year::backend::{
-    get_rosh_hashana, months_per_year, return_year_sched, FIRST_YEAR, YEAR_SCHED,
+    get_rosh_hashana, months_per_year, return_year_sched, CHALAKIM_PER_HOUR, EPOCH, FIRST_YEAR,
+    YEAR_SCHED,
 };
+use crate::prelude::HebrewMonth::{Adar, Adar1, Adar2};
+use crate::prelude::{ConversionError, HebrewMonth, Molad};
 
 /// HebrewYear holds data on a given year. It's faster to get multiple HebrewDates from
 /// an existing HebrewYear rather than generating each one on its own.
-
 #[derive(Copy, Clone, Debug)]
 pub struct HebrewYear {
     pub(crate) year: u64,
@@ -27,6 +31,7 @@ pub struct HebrewYear {
     pub(crate) sched: [u8; 14],
     pub(crate) year_len: u64,
     pub(crate) days_since_epoch: u64,
+    pub(crate) chalakim_since_epoch: u64,
 }
 
 impl HebrewYear {
@@ -44,9 +49,10 @@ impl HebrewYear {
             let cur_rh = get_rosh_hashana(year);
             let next_rh = get_rosh_hashana(year + 1);
             let days_since_epoch = cur_rh.0;
-            let amnt_days_in_year = next_rh.0 - cur_rh.0;
+            let chalakim_since_epoch = cur_rh.2;
+            let year_len = next_rh.0 - cur_rh.0;
             let months_per_year = months_per_year(year);
-            let sched = &YEAR_SCHED[return_year_sched(amnt_days_in_year)];
+            let sched = &YEAR_SCHED[return_year_sched(year_len)];
 
             Ok(HebrewYear {
                 day_of_rh: get_rosh_hashana(year).1,
@@ -55,7 +61,8 @@ impl HebrewYear {
                 months_per_year,
                 sched: sched.clone(),
                 days_since_epoch,
-                year_len: amnt_days_in_year,
+                year_len,
+                chalakim_since_epoch,
             })
         }
     }
@@ -321,6 +328,81 @@ impl HebrewYear {
         }
         return_vec
     }
+
+    /// Returns the Molad of a given month, or a ConversionError if trying to get Molad of a month which is does not exist in that year.
+    ///
+    /// # Note:
+    /// The Molad has no modern Halachic significance since Rosh Chodesh isn't derived from the Molad. However, it is useful to know as some say that one should know the Molad during the Birkas HaChodesh.
+    pub fn get_molad(&self, month: HebrewMonth) -> Result<Molad, ConversionError> {
+        let chalakim_since_epoch = if self.is_leap_year() {
+            match month {
+                HebrewMonth::Tishrei => 0,
+                HebrewMonth::Cheshvan => 1,
+                HebrewMonth::Kislev => 2,
+                HebrewMonth::Teves => 3,
+                HebrewMonth::Shvat => 4,
+                Adar1 => 5,
+                Adar2 => 6,
+                HebrewMonth::Nissan => 7,
+                HebrewMonth::Iyar => 8,
+                HebrewMonth::Sivan => 9,
+                HebrewMonth::Tammuz => 10,
+                HebrewMonth::Av => 11,
+                HebrewMonth::Elul => 12,
+                Adar => {
+                    return Err(ConversionError::IsLeapYear);
+                }
+            }
+        } else {
+            match month {
+                HebrewMonth::Tishrei => 0,
+                HebrewMonth::Cheshvan => 1,
+                HebrewMonth::Kislev => 2,
+                HebrewMonth::Teves => 3,
+                HebrewMonth::Shvat => 4,
+                HebrewMonth::Adar => 5,
+                HebrewMonth::Nissan => 6,
+                HebrewMonth::Iyar => 7,
+                HebrewMonth::Sivan => 8,
+                HebrewMonth::Tammuz => 9,
+                HebrewMonth::Av => 10,
+                HebrewMonth::Elul => 11,
+                Adar1 => return Err(ConversionError::IsNotLeapYear),
+                Adar2 => return Err(ConversionError::IsNotLeapYear),
+            }
+        } * CHALAKIM_BETWEEN_MOLAD
+            + self.chalakim_since_epoch
+            + FIRST_MOLAD;
+        let minutes_since_epoch = (chalakim_since_epoch / (CHALAKIM_PER_HOUR / 60))
+            .try_into()
+            .unwrap();
+        let remainder = (chalakim_since_epoch % (CHALAKIM_PER_HOUR / 60))
+            .try_into()
+            .unwrap();
+        let day = EPOCH.clone() + Duration::minutes(minutes_since_epoch);
+        Ok(Molad { day, remainder })
+    }
+}
+
+#[test]
+fn test_get_molad() {
+    let hebrew_year = HebrewYear::new(5780).unwrap();
+    let p = hebrew_year.get_molad(HebrewMonth::Tishrei).unwrap();
+    assert_eq!(p, Molad{ day: Utc.ymd(2019,9,29).and_hms(5,50,0), remainder: 5 });
+    let p = hebrew_year.get_molad(HebrewMonth::Cheshvan).unwrap();
+    assert_eq!(p, Molad{ day: Utc.ymd(2019,10,28).and_hms(18,34,0), remainder: 6 });
+
+    let hebrew_year = HebrewYear::new(5781).unwrap();
+    let p = hebrew_year.get_molad(HebrewMonth::Elul).unwrap();
+    assert_eq!(p, Molad{ day: Utc.ymd(2021,8,8).and_hms(10,43,0), remainder: 10 });
+
+
+    //check error
+    let hebrew_year = HebrewYear::new(5780).unwrap();
+    assert_eq!(hebrew_year.get_molad(HebrewMonth::Adar1), Err(ConversionError::IsNotLeapYear));
+
+    let hebrew_year = HebrewYear::new(5779).unwrap();
+    assert_eq!(hebrew_year.get_molad(HebrewMonth::Adar), Err(ConversionError::IsLeapYear));
 }
 
 /// Returns a HebrewDate on success, or a ConversionError on failure.
@@ -332,7 +414,7 @@ impl HebrewYear {
 /// Hebrew days start at sundown, not midnight, so there isn't a full 1:1 mapping between
 /// Gregorian days and Hebrew. So when you look up the date of Rosh Hashana 5779, most calendars will say that it's on Monday the 10th of September, 2018, while Rosh Hashana really started at sundown on the 9th of September.
 ///
-/// I'm trying to be a _bit_ more precise, so I made the date cutoff at 6:00 PM. So fore xample:
+/// I'm trying to be a _bit_ more precise, so I made the date cutoff at 6:00 PM. So for example:
 ///
 /// ```
 /// use std::num::NonZeroI8;
@@ -447,6 +529,7 @@ mod test {
             HebrewYear::new(i).unwrap();
         }
     }
+
     #[test]
     fn check_year_type() {
         use super::*;

@@ -1,4 +1,5 @@
 mod location;
+use chrono::Utc;
 #[doc(inline)]
 pub use location::*;
 use serde::{Deserialize, Serialize};
@@ -31,6 +32,20 @@ impl From<u64> for Day {
     }
 }
 
+#[derive(Debug, PartialEq, Eq, Copy, Clone, Ord, PartialOrd)]
+pub struct Molad {
+    pub(crate) day: chrono::DateTime<Utc>,
+    pub(crate) remainder: u16,
+}
+
+impl Molad {
+    pub fn get_day_utc(&self) -> chrono::DateTime<Utc>{
+        self.day
+    }
+    pub fn get_chalakim(&self) -> u16{
+        self.remainder
+    }
+}
 #[derive(Debug, PartialEq, Eq, Copy, Clone, Serialize, Deserialize, Ord, PartialOrd)]
 pub enum HebrewMonth {
     Tishrei,
@@ -132,7 +147,7 @@ pub enum ConversionError {
 impl std::error::Error for ConversionError {}
 
 impl fmt::Display for ConversionError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             ConversionError::IsNotLeapYear => write!(
                 f,

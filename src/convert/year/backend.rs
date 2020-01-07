@@ -1,10 +1,11 @@
 use crate::prelude::Day;
 use chrono::prelude::*;
 /// The amount of Chalakim in an hour.
-const CHALAKIM_PER_HOUR: u64 = 1080;
+pub(crate) const CHALAKIM_PER_HOUR: u64 = 1080;
 /// The amount of Chalakim between two Molads.
 // See https://www.chabad.org/library/article_cdo/aid/947923/jewish/Kiddush-HaChodesh-Chapter-Six.htm#bartnoteRef8a947923
-const CHALAKIM_BETWEEN_MOLAD: u64 = 29 * 24 * CHALAKIM_PER_HOUR + 12 * CHALAKIM_PER_HOUR + 793;
+pub(crate) const CHALAKIM_BETWEEN_MOLAD: u64 =
+    29 * 24 * CHALAKIM_PER_HOUR + 12 * CHALAKIM_PER_HOUR + 793;
 
 //An array documenting which years are leap years. The Hebrew calendar has a 19 year cycle of leap
 //years.
@@ -77,7 +78,7 @@ pub(crate) fn months_per_year(year: u64) -> u64 {
 
 //Calculate how many Chalakim between Epoch and Rosh Hashana, and which day of the week does it
 //fall out on.
-pub(crate) fn get_rosh_hashana(year: u64) -> (u64, Day) {
+pub(crate) fn get_rosh_hashana(year: u64) -> (u64, Day, u64) {
     let amnt_chalakim_since_first_molad = get_molad_for_year(year);
     let amnt_chalakim_since_epoch = amnt_chalakim_since_first_molad + FIRST_MOLAD;
 
@@ -120,7 +121,7 @@ pub(crate) fn get_rosh_hashana(year: u64) -> (u64, Day) {
     //This shouldn't panic, as there are seven options in Day (seven days in week).
     dow = Day::from((amnt_days) % 7);
 
-    (amnt_days, dow)
+    (amnt_days, dow, amnt_chalakim_since_first_molad)
 }
 
 pub(crate) fn day_of_last_rh(days_since_first_rh: u64) -> u64 {
@@ -137,41 +138,23 @@ pub(crate) fn day_of_last_rh(days_since_first_rh: u64) -> u64 {
 mod tests {
     use crate::convert::HebrewDate;
     use crate::prelude::*;
-    use std::num::NonZeroI8;
     use chrono::Duration;
+    use std::num::NonZeroI8;
 
     use super::*;
     #[test]
     fn years_correct_sum() {
-        assert_eq!(
-            YEAR_SCHED[0].iter().map(|x| (*x) as u64).sum::<u64>(),
-            353
-        );
-        assert_eq!(
-            YEAR_SCHED[1].iter().map(|x| (*x) as u64).sum::<u64>(),
-            354
-        );
-        assert_eq!(
-            YEAR_SCHED[2].iter().map(|x| (*x) as u64).sum::<u64>(),
-            355
-        );
-        assert_eq!(
-            YEAR_SCHED[3].iter().map(|x| (*x) as u64).sum::<u64>(),
-            383
-        );
-        assert_eq!(
-            YEAR_SCHED[4].iter().map(|x| (*x) as u64).sum::<u64>(),
-            384
-        );
-        assert_eq!(
-            YEAR_SCHED[5].iter().map(|x| (*x) as u64).sum::<u64>(),
-            385
-        );
+        assert_eq!(YEAR_SCHED[0].iter().map(|x| (*x) as u64).sum::<u64>(), 353);
+        assert_eq!(YEAR_SCHED[1].iter().map(|x| (*x) as u64).sum::<u64>(), 354);
+        assert_eq!(YEAR_SCHED[2].iter().map(|x| (*x) as u64).sum::<u64>(), 355);
+        assert_eq!(YEAR_SCHED[3].iter().map(|x| (*x) as u64).sum::<u64>(), 383);
+        assert_eq!(YEAR_SCHED[4].iter().map(|x| (*x) as u64).sum::<u64>(), 384);
+        assert_eq!(YEAR_SCHED[5].iter().map(|x| (*x) as u64).sum::<u64>(), 385);
     }
 
     #[test]
     fn years_have_right_days() {
-        extern crate rayon;
+        use rayon;
         use rayon::prelude::*;
 
         ((FIRST_YEAR + 1)..1000000)

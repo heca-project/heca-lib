@@ -126,9 +126,7 @@ pub(crate) fn get_rosh_hashana(year: u64) -> (u64, Day, u64) {
 
 pub(crate) fn day_of_last_rh(days_since_first_rh: u64) -> u64 {
     let mut cur_year = (FIRST_YEAR) + 19 * days_since_first_rh / 6956;
-    if get_rosh_hashana(cur_year).0 > days_since_first_rh {
-        panic!("get_rosh_hashana(cur_year).0 < days_since_first_rh ");
-    }
+    assert!(get_rosh_hashana(cur_year).0 <= days_since_first_rh);
     while get_rosh_hashana(cur_year + 1).0 <= days_since_first_rh {
         cur_year += 1;
     }

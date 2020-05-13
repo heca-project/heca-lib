@@ -1,522 +1,537 @@
-use smallvec::*;
-
 use crate::prelude::*;
 use crate::{HebrewDate, HebrewYear};
-use std::num::NonZeroI8;
+use std::num::NonZeroU8;
+use tinyvec::TinyVec;
+use Parsha::Haazinu;
 
 #[inline]
 pub(crate) fn get_yt_list(
-    year: HebrewYear,
+    year: &HebrewYear,
     location: Location,
-) -> SmallVec<[TorahReadingDay; 256]> {
-    let mut v1 = smallvec![
-        TorahReadingDay {
+    array_vec: &mut TinyVec<impl tinyvec::Array<Item = Option<Holiday>>>,
+) {
+    array_vec.extend_from_slice(&[
+        Some(Holiday::TorahReadingDay(TorahReadingDay {
             day: year
-                .get_hebrew_date(HebrewMonth::Tishrei, NonZeroI8::new(1).unwrap())
+                .get_hebrew_date(HebrewMonth::Tishrei, NonZeroU8::new(1).unwrap())
                 .unwrap(),
-            name: TorahReading::YomTov(YomTov::RoshHashanah1),
-        },
-        TorahReadingDay {
+            name: Name::YomTov(YomTov::RoshHashanah1),
+        })),
+        Some(Holiday::TorahReadingDay(TorahReadingDay {
             day: year
-                .get_hebrew_date(HebrewMonth::Tishrei, NonZeroI8::new(2).unwrap())
+                .get_hebrew_date(HebrewMonth::Tishrei, NonZeroU8::new(2).unwrap())
                 .unwrap(),
-            name: TorahReading::YomTov(YomTov::RoshHashanah2),
-        },
-        TorahReadingDay {
+            name: Name::YomTov(YomTov::RoshHashanah2),
+        })),
+        Some(Holiday::TorahReadingDay(TorahReadingDay {
             day: year
-                .get_hebrew_date(HebrewMonth::Tishrei, NonZeroI8::new(10).unwrap())
+                .get_hebrew_date(HebrewMonth::Tishrei, NonZeroU8::new(10).unwrap())
                 .unwrap(),
-            name: TorahReading::YomTov(YomTov::YomKippur),
-        },
-        TorahReadingDay {
+            name: Name::YomTov(YomTov::YomKippur),
+        })),
+        Some(Holiday::TorahReadingDay(TorahReadingDay {
             day: year
-                .get_hebrew_date(HebrewMonth::Tishrei, NonZeroI8::new(15).unwrap())
+                .get_hebrew_date(HebrewMonth::Tishrei, NonZeroU8::new(15).unwrap())
                 .unwrap(),
-            name: TorahReading::YomTov(YomTov::Sukkos1),
-        },
-        TorahReadingDay {
+            name: Name::YomTov(YomTov::Sukkos1),
+        })),
+        Some(Holiday::TorahReadingDay(TorahReadingDay {
             day: year
-                .get_hebrew_date(HebrewMonth::Tishrei, NonZeroI8::new(16).unwrap())
+                .get_hebrew_date(HebrewMonth::Tishrei, NonZeroU8::new(16).unwrap())
                 .unwrap(),
-            name: TorahReading::YomTov(YomTov::Sukkos2),
-        },
-        TorahReadingDay {
+            name: Name::YomTov(YomTov::Sukkos2),
+        })),
+        Some(Holiday::TorahReadingDay(TorahReadingDay {
             day: year
-                .get_hebrew_date(HebrewMonth::Tishrei, NonZeroI8::new(17).unwrap())
+                .get_hebrew_date(HebrewMonth::Tishrei, NonZeroU8::new(17).unwrap())
                 .unwrap(),
-            name: TorahReading::YomTov(YomTov::Sukkos3),
-        },
-        TorahReadingDay {
+            name: Name::YomTov(YomTov::Sukkos3),
+        })),
+        Some(Holiday::TorahReadingDay(TorahReadingDay {
             day: year
-                .get_hebrew_date(HebrewMonth::Tishrei, NonZeroI8::new(18).unwrap())
+                .get_hebrew_date(HebrewMonth::Tishrei, NonZeroU8::new(18).unwrap())
                 .unwrap(),
-            name: TorahReading::YomTov(YomTov::Sukkos4),
-        },
-        TorahReadingDay {
+            name: Name::YomTov(YomTov::Sukkos4),
+        })),
+        Some(Holiday::TorahReadingDay(TorahReadingDay {
             day: year
-                .get_hebrew_date(HebrewMonth::Tishrei, NonZeroI8::new(19).unwrap())
+                .get_hebrew_date(HebrewMonth::Tishrei, NonZeroU8::new(19).unwrap())
                 .unwrap(),
-            name: TorahReading::YomTov(YomTov::Sukkos5),
-        },
-        TorahReadingDay {
+            name: Name::YomTov(YomTov::Sukkos5),
+        })),
+        Some(Holiday::TorahReadingDay(TorahReadingDay {
             day: year
-                .get_hebrew_date(HebrewMonth::Tishrei, NonZeroI8::new(20).unwrap())
+                .get_hebrew_date(HebrewMonth::Tishrei, NonZeroU8::new(20).unwrap())
                 .unwrap(),
-            name: TorahReading::YomTov(YomTov::Sukkos6),
-        },
-        TorahReadingDay {
+            name: Name::YomTov(YomTov::Sukkos6),
+        })),
+        Some(Holiday::TorahReadingDay(TorahReadingDay {
             day: year
-                .get_hebrew_date(HebrewMonth::Tishrei, NonZeroI8::new(21).unwrap())
+                .get_hebrew_date(HebrewMonth::Tishrei, NonZeroU8::new(21).unwrap())
                 .unwrap(),
-            name: TorahReading::YomTov(YomTov::Sukkos7),
-        },
-        TorahReadingDay {
+            name: Name::YomTov(YomTov::Sukkos7),
+        })),
+        Some(Holiday::TorahReadingDay(TorahReadingDay {
             day: year
-                .get_hebrew_date(HebrewMonth::Tishrei, NonZeroI8::new(22).unwrap())
+                .get_hebrew_date(HebrewMonth::Tishrei, NonZeroU8::new(22).unwrap())
                 .unwrap(),
-            name: TorahReading::YomTov(YomTov::ShminiAtzeres),
-        },
-    ];
+            name: Name::YomTov(YomTov::ShminiAtzeres),
+        })),
+    ]);
     if location == Location::Chul {
-        v1.push(TorahReadingDay {
-            day: year
-                .get_hebrew_date(HebrewMonth::Tishrei, NonZeroI8::new(23).unwrap())
-                .unwrap(),
-            name: TorahReading::YomTov(YomTov::SimchasTorah),
-        });
+        array_vec.extend(std::iter::once(Some(Holiday::TorahReadingDay(
+            TorahReadingDay {
+                day: year
+                    .get_hebrew_date(HebrewMonth::Tishrei, NonZeroU8::new(23).unwrap())
+                    .unwrap(),
+                name: Name::YomTov(YomTov::SimchasTorah),
+            },
+        ))));
     }
-    v1.extend_from_slice(&[
-        TorahReadingDay {
+    array_vec.extend_from_slice(&[
+        Some(Holiday::TorahReadingDay(TorahReadingDay {
             day: year
-                .get_hebrew_date(HebrewMonth::Nissan, NonZeroI8::new(15).unwrap())
+                .get_hebrew_date(HebrewMonth::Nissan, NonZeroU8::new(15).unwrap())
                 .unwrap(),
-            name: TorahReading::YomTov(YomTov::Pesach1),
-        },
-        TorahReadingDay {
+            name: Name::YomTov(YomTov::Pesach1),
+        })),
+        Some(Holiday::TorahReadingDay(TorahReadingDay {
             day: year
-                .get_hebrew_date(HebrewMonth::Nissan, NonZeroI8::new(16).unwrap())
+                .get_hebrew_date(HebrewMonth::Nissan, NonZeroU8::new(16).unwrap())
                 .unwrap(),
-            name: TorahReading::YomTov(YomTov::Pesach2),
-        },
-        TorahReadingDay {
+            name: Name::YomTov(YomTov::Pesach2),
+        })),
+        Some(Holiday::TorahReadingDay(TorahReadingDay {
             day: year
-                .get_hebrew_date(HebrewMonth::Nissan, NonZeroI8::new(17).unwrap())
+                .get_hebrew_date(HebrewMonth::Nissan, NonZeroU8::new(17).unwrap())
                 .unwrap(),
-            name: TorahReading::YomTov(YomTov::Pesach3),
-        },
-        TorahReadingDay {
+            name: Name::YomTov(YomTov::Pesach3),
+        })),
+        Some(Holiday::TorahReadingDay(TorahReadingDay {
             day: year
-                .get_hebrew_date(HebrewMonth::Nissan, NonZeroI8::new(18).unwrap())
+                .get_hebrew_date(HebrewMonth::Nissan, NonZeroU8::new(18).unwrap())
                 .unwrap(),
-            name: TorahReading::YomTov(YomTov::Pesach4),
-        },
-        TorahReadingDay {
+            name: Name::YomTov(YomTov::Pesach4),
+        })),
+        Some(Holiday::TorahReadingDay(TorahReadingDay {
             day: year
-                .get_hebrew_date(HebrewMonth::Nissan, NonZeroI8::new(19).unwrap())
+                .get_hebrew_date(HebrewMonth::Nissan, NonZeroU8::new(19).unwrap())
                 .unwrap(),
-            name: TorahReading::YomTov(YomTov::Pesach5),
-        },
-        TorahReadingDay {
+            name: Name::YomTov(YomTov::Pesach5),
+        })),
+        Some(Holiday::TorahReadingDay(TorahReadingDay {
             day: year
-                .get_hebrew_date(HebrewMonth::Nissan, NonZeroI8::new(20).unwrap())
+                .get_hebrew_date(HebrewMonth::Nissan, NonZeroU8::new(20).unwrap())
                 .unwrap(),
-            name: TorahReading::YomTov(YomTov::Pesach6),
-        },
-        TorahReadingDay {
+            name: Name::YomTov(YomTov::Pesach6),
+        })),
+        Some(Holiday::TorahReadingDay(TorahReadingDay {
             day: year
-                .get_hebrew_date(HebrewMonth::Nissan, NonZeroI8::new(21).unwrap())
+                .get_hebrew_date(HebrewMonth::Nissan, NonZeroU8::new(21).unwrap())
                 .unwrap(),
-            name: TorahReading::YomTov(YomTov::Pesach7),
-        },
+            name: Name::YomTov(YomTov::Pesach7),
+        })),
     ]);
 
     if location == Location::Chul {
-        v1.push(TorahReadingDay {
-            day: year
-                .get_hebrew_date(HebrewMonth::Nissan, NonZeroI8::new(22).unwrap())
-                .unwrap(),
-            name: TorahReading::YomTov(YomTov::Pesach8),
-        });
+        array_vec.extend(std::iter::once(Some(Holiday::TorahReadingDay(
+            TorahReadingDay {
+                day: year
+                    .get_hebrew_date(HebrewMonth::Nissan, NonZeroU8::new(22).unwrap())
+                    .unwrap(),
+                name: Name::YomTov(YomTov::Pesach8),
+            },
+        ))));
     }
-    v1.push(TorahReadingDay {
-        day: year
-            .get_hebrew_date(HebrewMonth::Sivan, NonZeroI8::new(6).unwrap())
-            .unwrap(),
-        name: TorahReading::YomTov(YomTov::Shavuos1),
-    });
+    array_vec.extend(std::iter::once(Some(Holiday::TorahReadingDay(
+        TorahReadingDay {
+            day: year
+                .get_hebrew_date(HebrewMonth::Sivan, NonZeroU8::new(6).unwrap())
+                .unwrap(),
+            name: Name::YomTov(YomTov::Shavuos1),
+        },
+    ))));
 
     if location == Location::Chul {
-        v1.push(TorahReadingDay {
-            day: year
-                .get_hebrew_date(HebrewMonth::Sivan, NonZeroI8::new(7).unwrap())
-                .unwrap(),
-            name: TorahReading::YomTov(YomTov::Shavuos2),
-        });
+        array_vec.extend(std::iter::once(Some(Holiday::TorahReadingDay(
+            TorahReadingDay {
+                day: year
+                    .get_hebrew_date(HebrewMonth::Sivan, NonZeroU8::new(7).unwrap())
+                    .unwrap(),
+                name: Name::YomTov(YomTov::Shavuos2),
+            },
+        ))));
     }
-
-    v1.into()
 }
 
-pub(crate) fn get_chol_list(year: HebrewYear) -> SmallVec<[TorahReadingDay; 256]> {
-    let mut special_days = smallvec![
-        TorahReadingDay {
+pub(crate) fn get_chol_list(
+    year: &HebrewYear,
+    return_vec: &mut TinyVec<impl tinyvec::Array<Item = Option<Holiday>>>,
+) {
+    return_vec.extend_from_slice(&[
+        Some(Holiday::TorahReadingDay(TorahReadingDay {
             day: year
-                .get_hebrew_date(HebrewMonth::Tishrei, NonZeroI8::new(30).unwrap())
+                .get_hebrew_date(HebrewMonth::Tishrei, NonZeroU8::new(30).unwrap())
                 .unwrap(),
-            name: TorahReading::Chol(Chol::RoshChodeshCheshvan1),
-        },
-        TorahReadingDay {
+            name: Name::Chol(Chol::RoshChodeshCheshvan1),
+        })),
+        Some(Holiday::TorahReadingDay(TorahReadingDay {
             day: year
-                .get_hebrew_date(HebrewMonth::Cheshvan, NonZeroI8::new(1).unwrap())
+                .get_hebrew_date(HebrewMonth::Cheshvan, NonZeroU8::new(1).unwrap())
                 .unwrap(),
-            name: TorahReading::Chol(Chol::RoshChodeshCheshvan2),
-        },
-        TorahReadingDay {
+            name: Name::Chol(Chol::RoshChodeshCheshvan2),
+        })),
+        Some(Holiday::TorahReadingDay(TorahReadingDay {
             day: year
-                .get_hebrew_date(HebrewMonth::Kislev, NonZeroI8::new(25).unwrap())
+                .get_hebrew_date(HebrewMonth::Kislev, NonZeroU8::new(25).unwrap())
                 .unwrap(),
-            name: TorahReading::Chol(Chol::Chanukah1),
-        },
-        TorahReadingDay {
+            name: Name::Chol(Chol::Chanukah1),
+        })),
+        Some(Holiday::TorahReadingDay(TorahReadingDay {
             day: year
-                .get_hebrew_date(HebrewMonth::Kislev, NonZeroI8::new(26).unwrap())
+                .get_hebrew_date(HebrewMonth::Kislev, NonZeroU8::new(26).unwrap())
                 .unwrap(),
-            name: TorahReading::Chol(Chol::Chanukah2),
-        },
-        TorahReadingDay {
+            name: Name::Chol(Chol::Chanukah2),
+        })),
+        Some(Holiday::TorahReadingDay(TorahReadingDay {
             day: year
-                .get_hebrew_date(HebrewMonth::Kislev, NonZeroI8::new(27).unwrap())
+                .get_hebrew_date(HebrewMonth::Kislev, NonZeroU8::new(27).unwrap())
                 .unwrap(),
-            name: TorahReading::Chol(Chol::Chanukah3),
-        },
-        TorahReadingDay {
+            name: Name::Chol(Chol::Chanukah3),
+        })),
+        Some(Holiday::TorahReadingDay(TorahReadingDay {
             day: year
-                .get_hebrew_date(HebrewMonth::Kislev, NonZeroI8::new(28).unwrap())
+                .get_hebrew_date(HebrewMonth::Kislev, NonZeroU8::new(28).unwrap())
                 .unwrap(),
-            name: TorahReading::Chol(Chol::Chanukah4),
-        },
-        TorahReadingDay {
+            name: Name::Chol(Chol::Chanukah4),
+        })),
+        Some(Holiday::TorahReadingDay(TorahReadingDay {
             day: year
-                .get_hebrew_date(HebrewMonth::Kislev, NonZeroI8::new(29).unwrap())
+                .get_hebrew_date(HebrewMonth::Kislev, NonZeroU8::new(29).unwrap())
                 .unwrap(),
-            name: TorahReading::Chol(Chol::Chanukah5),
-        },
-        TorahReadingDay {
+            name: Name::Chol(Chol::Chanukah5),
+        })),
+        Some(Holiday::TorahReadingDay(TorahReadingDay {
             day: year
-                .get_hebrew_date(HebrewMonth::Shvat, NonZeroI8::new(1).unwrap())
+                .get_hebrew_date(HebrewMonth::Shvat, NonZeroU8::new(1).unwrap())
                 .unwrap(),
-            name: TorahReading::Chol(Chol::RoshChodeshShvat),
-        },
-        TorahReadingDay {
+            name: Name::Chol(Chol::RoshChodeshShvat),
+        })),
+        Some(Holiday::TorahReadingDay(TorahReadingDay {
             day: year
-                .get_hebrew_date(HebrewMonth::Teves, NonZeroI8::new(10).unwrap())
+                .get_hebrew_date(HebrewMonth::Teves, NonZeroU8::new(10).unwrap())
                 .unwrap(),
-            name: TorahReading::Chol(Chol::TenTeves),
-        },
-        TorahReadingDay {
+            name: Name::Chol(Chol::TenTeves),
+        })),
+        Some(Holiday::TorahReadingDay(TorahReadingDay {
             day: year
-                .get_hebrew_date(HebrewMonth::Nissan, NonZeroI8::new(1).unwrap())
+                .get_hebrew_date(HebrewMonth::Nissan, NonZeroU8::new(1).unwrap())
                 .unwrap(),
-            name: TorahReading::Chol(Chol::RoshChodeshNissan),
-        },
-        TorahReadingDay {
+            name: Name::Chol(Chol::RoshChodeshNissan),
+        })),
+        Some(Holiday::TorahReadingDay(TorahReadingDay {
             day: year
-                .get_hebrew_date(HebrewMonth::Nissan, NonZeroI8::new(30).unwrap())
+                .get_hebrew_date(HebrewMonth::Nissan, NonZeroU8::new(30).unwrap())
                 .unwrap(),
-            name: TorahReading::Chol(Chol::RoshChodeshIyar1),
-        },
-        TorahReadingDay {
+            name: Name::Chol(Chol::RoshChodeshIyar1),
+        })),
+        Some(Holiday::TorahReadingDay(TorahReadingDay {
             day: year
-                .get_hebrew_date(HebrewMonth::Iyar, NonZeroI8::new(1).unwrap())
+                .get_hebrew_date(HebrewMonth::Iyar, NonZeroU8::new(1).unwrap())
                 .unwrap(),
-            name: TorahReading::Chol(Chol::RoshChodeshIyar2),
-        },
-        TorahReadingDay {
+            name: Name::Chol(Chol::RoshChodeshIyar2),
+        })),
+        Some(Holiday::TorahReadingDay(TorahReadingDay {
             day: year
-                .get_hebrew_date(HebrewMonth::Sivan, NonZeroI8::new(1).unwrap())
+                .get_hebrew_date(HebrewMonth::Sivan, NonZeroU8::new(1).unwrap())
                 .unwrap(),
-            name: TorahReading::Chol(Chol::RoshChodeshSivan),
-        },
-        TorahReadingDay {
+            name: Name::Chol(Chol::RoshChodeshSivan),
+        })),
+        Some(Holiday::TorahReadingDay(TorahReadingDay {
             day: year
-                .get_hebrew_date(HebrewMonth::Sivan, NonZeroI8::new(30).unwrap())
+                .get_hebrew_date(HebrewMonth::Sivan, NonZeroU8::new(30).unwrap())
                 .unwrap(),
-            name: TorahReading::Chol(Chol::RoshChodeshTammuz1),
-        },
-        TorahReadingDay {
+            name: Name::Chol(Chol::RoshChodeshTammuz1),
+        })),
+        Some(Holiday::TorahReadingDay(TorahReadingDay {
             day: year
-                .get_hebrew_date(HebrewMonth::Tammuz, NonZeroI8::new(1).unwrap())
+                .get_hebrew_date(HebrewMonth::Tammuz, NonZeroU8::new(1).unwrap())
                 .unwrap(),
-            name: TorahReading::Chol(Chol::RoshChodeshTammuz2),
-        },
-        TorahReadingDay {
+            name: Name::Chol(Chol::RoshChodeshTammuz2),
+        })),
+        Some(Holiday::TorahReadingDay(TorahReadingDay {
             day: year
-                .get_hebrew_date(HebrewMonth::Av, NonZeroI8::new(1).unwrap())
+                .get_hebrew_date(HebrewMonth::Av, NonZeroU8::new(1).unwrap())
                 .unwrap(),
-            name: TorahReading::Chol(Chol::RoshChodeshAv),
-        },
-        TorahReadingDay {
+            name: Name::Chol(Chol::RoshChodeshAv),
+        })),
+        Some(Holiday::TorahReadingDay(TorahReadingDay {
             day: year
-                .get_hebrew_date(HebrewMonth::Av, NonZeroI8::new(30).unwrap())
+                .get_hebrew_date(HebrewMonth::Av, NonZeroU8::new(30).unwrap())
                 .unwrap(),
-            name: TorahReading::Chol(Chol::RoshChodeshElul1),
-        },
-        TorahReadingDay {
+            name: Name::Chol(Chol::RoshChodeshElul1),
+        })),
+        Some(Holiday::TorahReadingDay(TorahReadingDay {
             day: year
-                .get_hebrew_date(HebrewMonth::Elul, NonZeroI8::new(1).unwrap())
+                .get_hebrew_date(HebrewMonth::Elul, NonZeroU8::new(1).unwrap())
                 .unwrap(),
-            name: TorahReading::Chol(Chol::RoshChodeshElul2),
-        },
-    ];
-    let mut second_vector = {
-        let mut in_vec: SmallVec<[TorahReadingDay; 256]> = SmallVec::new();
-        if year.sched[1] == 30 {
-            in_vec.push(TorahReadingDay {
-                day: year
-                    .get_hebrew_date(HebrewMonth::Cheshvan, NonZeroI8::new(30).unwrap())
-                    .unwrap(),
-                name: TorahReading::Chol(Chol::RoshChodeshKislev1),
-            });
-            in_vec.push(TorahReadingDay {
-                day: year
-                    .get_hebrew_date(HebrewMonth::Kislev, NonZeroI8::new(1).unwrap())
-                    .unwrap(),
-                name: TorahReading::Chol(Chol::RoshChodeshKislev2),
-            });
-        } else {
-            in_vec.push(TorahReadingDay {
-                day: year
-                    .get_hebrew_date(HebrewMonth::Kislev, NonZeroI8::new(1).unwrap())
-                    .unwrap(),
-                name: TorahReading::Chol(Chol::RoshChodeshKislev),
-            });
-        }
+            name: Name::Chol(Chol::RoshChodeshElul2),
+        })),
+    ]);
 
-        if year.sched[2] == 30 {
-            in_vec.push(TorahReadingDay {
+    if year.sched[1] == 30 {
+        return_vec.extend_from_slice(&[
+            Some(Holiday::TorahReadingDay(TorahReadingDay {
                 day: year
-                    .get_hebrew_date(HebrewMonth::Kislev, NonZeroI8::new(30).unwrap())
+                    .get_hebrew_date(HebrewMonth::Cheshvan, NonZeroU8::new(30).unwrap())
                     .unwrap(),
-                name: TorahReading::Chol(Chol::RoshChodeshTeves1),
-            });
-            in_vec.push(TorahReadingDay {
+                name: Name::Chol(Chol::RoshChodeshKislev1),
+            })),
+            Some(Holiday::TorahReadingDay(TorahReadingDay {
                 day: year
-                    .get_hebrew_date(HebrewMonth::Teves, NonZeroI8::new(1).unwrap())
+                    .get_hebrew_date(HebrewMonth::Kislev, NonZeroU8::new(1).unwrap())
                     .unwrap(),
-                name: TorahReading::Chol(Chol::RoshChodeshTeves2),
-            });
-            in_vec.push(TorahReadingDay {
+                name: Name::Chol(Chol::RoshChodeshKislev2),
+            })),
+        ]);
+    } else {
+        return_vec.extend(std::iter::once(Some(Holiday::TorahReadingDay(
+            TorahReadingDay {
                 day: year
-                    .get_hebrew_date(HebrewMonth::Kislev, NonZeroI8::new(30).unwrap())
+                    .get_hebrew_date(HebrewMonth::Kislev, NonZeroU8::new(1).unwrap())
                     .unwrap(),
-                name: TorahReading::Chol(Chol::Chanukah6),
-            });
-            in_vec.push(TorahReadingDay {
-                day: year
-                    .get_hebrew_date(HebrewMonth::Teves, NonZeroI8::new(1).unwrap())
-                    .unwrap(),
-                name: TorahReading::Chol(Chol::Chanukah7),
-            });
-            in_vec.push(TorahReadingDay {
-                day: year
-                    .get_hebrew_date(HebrewMonth::Teves, NonZeroI8::new(2).unwrap())
-                    .unwrap(),
-                name: TorahReading::Chol(Chol::Chanukah8),
-            });
-        } else {
-            in_vec.push(TorahReadingDay {
-                day: year
-                    .get_hebrew_date(HebrewMonth::Teves, NonZeroI8::new(1).unwrap())
-                    .unwrap(),
-                name: TorahReading::Chol(Chol::RoshChodeshTeves),
-            });
-            in_vec.push(TorahReadingDay {
-                day: year
-                    .get_hebrew_date(HebrewMonth::Teves, NonZeroI8::new(1).unwrap())
-                    .unwrap(),
-                name: TorahReading::Chol(Chol::Chanukah6),
-            });
-            in_vec.push(TorahReadingDay {
-                day: year
-                    .get_hebrew_date(HebrewMonth::Teves, NonZeroI8::new(2).unwrap())
-                    .unwrap(),
-                name: TorahReading::Chol(Chol::Chanukah7),
-            });
-            in_vec.push(TorahReadingDay {
-                day: year
-                    .get_hebrew_date(HebrewMonth::Teves, NonZeroI8::new(3).unwrap())
-                    .unwrap(),
-                name: TorahReading::Chol(Chol::Chanukah8),
-            });
-        }
+                name: Name::Chol(Chol::RoshChodeshKislev),
+            },
+        ))));
+    }
 
-        if year.sched[5] != 0 {
-            //If this is a regular year
-            in_vec.push(TorahReadingDay {
+    if year.sched[2] == 30 {
+        return_vec.extend_from_slice(&[
+            Some(Holiday::TorahReadingDay(TorahReadingDay {
                 day: year
-                    .get_hebrew_date(HebrewMonth::Shvat, NonZeroI8::new(30).unwrap())
+                    .get_hebrew_date(HebrewMonth::Kislev, NonZeroU8::new(30).unwrap())
                     .unwrap(),
-                name: TorahReading::Chol(Chol::RoshChodeshAdar1),
-            });
-            in_vec.push(TorahReadingDay {
+                name: Name::Chol(Chol::RoshChodeshTeves1),
+            })),
+            Some(Holiday::TorahReadingDay(TorahReadingDay {
                 day: year
-                    .get_hebrew_date(HebrewMonth::Adar, NonZeroI8::new(1).unwrap())
+                    .get_hebrew_date(HebrewMonth::Teves, NonZeroU8::new(1).unwrap())
                     .unwrap(),
-                name: TorahReading::Chol(Chol::RoshChodeshAdar2),
-            });
+                name: Name::Chol(Chol::RoshChodeshTeves2),
+            })),
+            Some(Holiday::TorahReadingDay(TorahReadingDay {
+                day: year
+                    .get_hebrew_date(HebrewMonth::Kislev, NonZeroU8::new(30).unwrap())
+                    .unwrap(),
+                name: Name::Chol(Chol::Chanukah6),
+            })),
+            Some(Holiday::TorahReadingDay(TorahReadingDay {
+                day: year
+                    .get_hebrew_date(HebrewMonth::Teves, NonZeroU8::new(1).unwrap())
+                    .unwrap(),
+                name: Name::Chol(Chol::Chanukah7),
+            })),
+            Some(Holiday::TorahReadingDay(TorahReadingDay {
+                day: year
+                    .get_hebrew_date(HebrewMonth::Teves, NonZeroU8::new(2).unwrap())
+                    .unwrap(),
+                name: Name::Chol(Chol::Chanukah8),
+            })),
+        ]);
+    } else {
+        return_vec.extend_from_slice(&[
+            Some(Holiday::TorahReadingDay(TorahReadingDay {
+                day: year
+                    .get_hebrew_date(HebrewMonth::Teves, NonZeroU8::new(1).unwrap())
+                    .unwrap(),
+                name: Name::Chol(Chol::RoshChodeshTeves),
+            })),
+            Some(Holiday::TorahReadingDay(TorahReadingDay {
+                day: year
+                    .get_hebrew_date(HebrewMonth::Teves, NonZeroU8::new(1).unwrap())
+                    .unwrap(),
+                name: Name::Chol(Chol::Chanukah6),
+            })),
+            Some(Holiday::TorahReadingDay(TorahReadingDay {
+                day: year
+                    .get_hebrew_date(HebrewMonth::Teves, NonZeroU8::new(2).unwrap())
+                    .unwrap(),
+                name: Name::Chol(Chol::Chanukah7),
+            })),
+            Some(Holiday::TorahReadingDay(TorahReadingDay {
+                day: year
+                    .get_hebrew_date(HebrewMonth::Teves, NonZeroU8::new(3).unwrap())
+                    .unwrap(),
+                name: Name::Chol(Chol::Chanukah8),
+            })),
+        ]);
+    }
 
+    if year.sched[5] != 0 {
+        //If this is a regular year
+        return_vec.extend_from_slice(&[
+            Some(Holiday::TorahReadingDay(TorahReadingDay {
+                day: year
+                    .get_hebrew_date(HebrewMonth::Shvat, NonZeroU8::new(30).unwrap())
+                    .unwrap(),
+                name: Name::Chol(Chol::RoshChodeshAdar1),
+            })),
+            Some(Holiday::TorahReadingDay(TorahReadingDay {
+                day: year
+                    .get_hebrew_date(HebrewMonth::Adar, NonZeroU8::new(1).unwrap())
+                    .unwrap(),
+                name: Name::Chol(Chol::RoshChodeshAdar2),
+            })),
             // Taanis Esther is on the 13th of Adar. However, If the next Rosh Hashana starts on a Thursday, the previous Purim starts on a
             // Sunday, and Taanis Esther needs to be brought back to Thursday.
-            in_vec.push(if year.day_of_next_rh != Day::Thursday {
-                TorahReadingDay {
+            if year.day_of_next_rh != Day::Thursday {
+                Some(Holiday::TorahReadingDay(TorahReadingDay {
                     day: year
-                        .get_hebrew_date(HebrewMonth::Adar, NonZeroI8::new(13).unwrap())
+                        .get_hebrew_date(HebrewMonth::Adar, NonZeroU8::new(13).unwrap())
                         .unwrap(),
-                    name: TorahReading::Chol(Chol::TaanisEsther),
-                }
+                    name: Name::Chol(Chol::TaanisEsther),
+                }))
             } else {
-                TorahReadingDay {
+                Some(Holiday::TorahReadingDay(TorahReadingDay {
                     day: year
-                        .get_hebrew_date(HebrewMonth::Adar, NonZeroI8::new(11).unwrap())
+                        .get_hebrew_date(HebrewMonth::Adar, NonZeroU8::new(11).unwrap())
                         .unwrap(),
-                    name: TorahReading::Chol(Chol::TaanisEsther),
-                }
-            });
-            in_vec.push(TorahReadingDay {
+                    name: Name::Chol(Chol::TaanisEsther),
+                }))
+            },
+        ]);
+        return_vec.extend_from_slice(&[
+            Some(Holiday::TorahReadingDay(TorahReadingDay {
                 day: year
-                    .get_hebrew_date(HebrewMonth::Adar, NonZeroI8::new(14).unwrap())
+                    .get_hebrew_date(HebrewMonth::Adar, NonZeroU8::new(14).unwrap())
                     .unwrap(),
-                name: TorahReading::Chol(Chol::Purim),
-            });
-            in_vec.push(TorahReadingDay {
+                name: Name::Chol(Chol::Purim),
+            })),
+            Some(Holiday::TorahReadingDay(TorahReadingDay {
                 day: year
-                    .get_hebrew_date(HebrewMonth::Adar, NonZeroI8::new(15).unwrap())
+                    .get_hebrew_date(HebrewMonth::Adar, NonZeroU8::new(15).unwrap())
                     .unwrap(),
-                name: TorahReading::Chol(Chol::ShushanPurim),
-            });
-        } else {
-            //If this is a leap year
+                name: Name::Chol(Chol::ShushanPurim),
+            })),
+        ]);
+    } else {
+        //If this is a leap year
 
-            in_vec.push(TorahReadingDay {
+        return_vec.extend_from_slice(&[
+            Some(Holiday::TorahReadingDay(TorahReadingDay {
                 day: year
-                    .get_hebrew_date(HebrewMonth::Shvat, NonZeroI8::new(30).unwrap())
+                    .get_hebrew_date(HebrewMonth::Shvat, NonZeroU8::new(30).unwrap())
                     .unwrap(),
-                name: TorahReading::Chol(Chol::RoshChodeshAdarRishon1),
-            });
-            in_vec.push(TorahReadingDay {
-                name: TorahReading::Chol(Chol::RoshChodeshAdarRishon2),
+                name: Name::Chol(Chol::RoshChodeshAdarRishon1),
+            })),
+            Some(Holiday::TorahReadingDay(TorahReadingDay {
+                name: Name::Chol(Chol::RoshChodeshAdarRishon2),
                 day: year
-                    .get_hebrew_date(HebrewMonth::Adar1, NonZeroI8::new(1).unwrap())
+                    .get_hebrew_date(HebrewMonth::Adar1, NonZeroU8::new(1).unwrap())
                     .unwrap(),
-            });
-            in_vec.push(TorahReadingDay {
+            })),
+            Some(Holiday::TorahReadingDay(TorahReadingDay {
                 day: year
-                    .get_hebrew_date(HebrewMonth::Adar1, NonZeroI8::new(30).unwrap())
+                    .get_hebrew_date(HebrewMonth::Adar1, NonZeroU8::new(30).unwrap())
                     .unwrap(),
-                name: TorahReading::Chol(Chol::RoshChodeshAdarSheni1),
-            });
-            in_vec.push(TorahReadingDay {
+                name: Name::Chol(Chol::RoshChodeshAdarSheni1),
+            })),
+            Some(Holiday::TorahReadingDay(TorahReadingDay {
                 day: year
-                    .get_hebrew_date(HebrewMonth::Adar2, NonZeroI8::new(1).unwrap())
+                    .get_hebrew_date(HebrewMonth::Adar2, NonZeroU8::new(1).unwrap())
                     .unwrap(),
-                name: TorahReading::Chol(Chol::RoshChodeshAdarSheni2),
-            });
+                name: Name::Chol(Chol::RoshChodeshAdarSheni2),
+            })),
             // If the next Rosh Hashana starts on a Thursday, the previous Purim starts on a
             // Sunday, and Taanis Esther needs to be brought back to Thursday.
-            in_vec.push(if year.day_of_next_rh != Day::Thursday {
-                TorahReadingDay {
+            if year.day_of_next_rh != Day::Thursday {
+                Some(Holiday::TorahReadingDay(TorahReadingDay {
                     day: year
-                        .get_hebrew_date(HebrewMonth::Adar2, NonZeroI8::new(13).unwrap())
+                        .get_hebrew_date(HebrewMonth::Adar2, NonZeroU8::new(13).unwrap())
                         .unwrap(),
 
-                    name: TorahReading::Chol(Chol::TaanisEsther),
-                }
+                    name: Name::Chol(Chol::TaanisEsther),
+                }))
             } else {
-                TorahReadingDay {
+                Some(Holiday::TorahReadingDay(TorahReadingDay {
                     day: year
-                        .get_hebrew_date(HebrewMonth::Adar2, NonZeroI8::new(11).unwrap())
+                        .get_hebrew_date(HebrewMonth::Adar2, NonZeroU8::new(11).unwrap())
                         .unwrap(),
-                    name: TorahReading::Chol(Chol::TaanisEsther),
-                }
-            });
-            in_vec.push(TorahReadingDay {
+                    name: Name::Chol(Chol::TaanisEsther),
+                }))
+            },
+            Some(Holiday::TorahReadingDay(TorahReadingDay {
                 day: year
-                    .get_hebrew_date(HebrewMonth::Adar2, NonZeroI8::new(14).unwrap())
+                    .get_hebrew_date(HebrewMonth::Adar2, NonZeroU8::new(14).unwrap())
                     .unwrap(),
-                name: TorahReading::Chol(Chol::Purim),
-            });
-            in_vec.push(TorahReadingDay {
+                name: Name::Chol(Chol::Purim),
+            })),
+            Some(Holiday::TorahReadingDay(TorahReadingDay {
                 day: year
-                    .get_hebrew_date(HebrewMonth::Adar2, NonZeroI8::new(15).unwrap())
+                    .get_hebrew_date(HebrewMonth::Adar2, NonZeroU8::new(15).unwrap())
                     .unwrap(),
-                name: TorahReading::Chol(Chol::ShushanPurim),
-            });
-        }
-
-        in_vec
-    };
+                name: Name::Chol(Chol::ShushanPurim),
+            })),
+        ]);
+    }
 
     //17th of Tammuz is on Shabbos when the next Rosh Hashana starts on Monday (For example
     //5782/5783).
-    let mut third_vector = if year.day_of_next_rh == Day::Monday {
-        vec![
-            TorahReadingDay {
+    return_vec.extend_from_slice(&if year.day_of_next_rh == Day::Monday {
+        [
+            Some(Holiday::TorahReadingDay(TorahReadingDay {
                 day: year
-                    .get_hebrew_date(HebrewMonth::Tammuz, NonZeroI8::new(18).unwrap())
+                    .get_hebrew_date(HebrewMonth::Tammuz, NonZeroU8::new(18).unwrap())
                     .unwrap(),
-                name: TorahReading::Chol(Chol::SeventeenTammuz),
-            },
-            TorahReadingDay {
+                name: Name::Chol(Chol::SeventeenTammuz),
+            })),
+            Some(Holiday::TorahReadingDay(TorahReadingDay {
                 day: year
-                    .get_hebrew_date(HebrewMonth::Av, NonZeroI8::new(10).unwrap())
+                    .get_hebrew_date(HebrewMonth::Av, NonZeroU8::new(10).unwrap())
                     .unwrap(),
-                name: TorahReading::Chol(Chol::NineAv),
-            },
+                name: Name::Chol(Chol::NineAv),
+            })),
         ]
     } else {
-        vec![
-            TorahReadingDay {
+        [
+            Some(Holiday::TorahReadingDay(TorahReadingDay {
                 day: year
-                    .get_hebrew_date(HebrewMonth::Tammuz, NonZeroI8::new(17).unwrap())
+                    .get_hebrew_date(HebrewMonth::Tammuz, NonZeroU8::new(17).unwrap())
                     .unwrap(),
-                name: TorahReading::Chol(Chol::SeventeenTammuz),
-            },
-            TorahReadingDay {
+                name: Name::Chol(Chol::SeventeenTammuz),
+            })),
+            Some(Holiday::TorahReadingDay(TorahReadingDay {
                 day: year
-                    .get_hebrew_date(HebrewMonth::Av, NonZeroI8::new(9).unwrap())
+                    .get_hebrew_date(HebrewMonth::Av, NonZeroU8::new(9).unwrap())
                     .unwrap(),
-                name: TorahReading::Chol(Chol::NineAv),
-            },
+                name: Name::Chol(Chol::NineAv),
+            })),
         ]
-    };
-    let tzom_gedalya = if year.day_of_rh == Day::Thursday {
-        TorahReadingDay {
+    });
+    return_vec.extend(std::iter::once(if year.day_of_rh == Day::Thursday {
+        Some(Holiday::TorahReadingDay(TorahReadingDay {
             day: year
-                .get_hebrew_date(HebrewMonth::Tishrei, NonZeroI8::new(4).unwrap())
+                .get_hebrew_date(HebrewMonth::Tishrei, NonZeroU8::new(4).unwrap())
                 .unwrap(),
-            name: TorahReading::Chol(Chol::TzomGedalia),
-        }
+            name: Name::Chol(Chol::TzomGedalia),
+        }))
     } else {
-        TorahReadingDay {
+        Some(Holiday::TorahReadingDay(TorahReadingDay {
             day: year
-                .get_hebrew_date(HebrewMonth::Tishrei, NonZeroI8::new(3).unwrap())
+                .get_hebrew_date(HebrewMonth::Tishrei, NonZeroU8::new(3).unwrap())
                 .unwrap(),
-            name: TorahReading::Chol(Chol::TzomGedalia),
-        }
-    };
-
-    special_days.extend_from_slice(&mut second_vector);
-    special_days.push(tzom_gedalya);
-    special_days.extend_from_slice(&mut third_vector);
-
-    special_days
+            name: Name::Chol(Chol::TzomGedalia),
+        }))
+    }));
 }
 
 /// This is based on the Biyur Halacha to Orach Chaim 428:4:3
 pub(crate) fn get_shabbos_list(
-    year: HebrewYear,
+    year: &HebrewYear,
     location: Location,
-) -> SmallVec<[TorahReadingDay; 256]> {
+    ignore_dates: &TinyVec<impl tinyvec::Array<Item = Option<Holiday>>>,
+    return_vec: &mut TinyVec<impl tinyvec::Array<Item = Option<Holiday>>>,
+) {
     let rh_dow = year.day_of_rh;
     let rh_dow_next = year.day_of_next_rh;
     let year_len = year.year_len;
@@ -553,76 +568,82 @@ pub(crate) fn get_shabbos_list(
     //Nitzavim/Vayelech is split only if Rosh Hashana starts on a Monday or Tuesday
     let split_nitzavim = rh_dow == Day::Monday || rh_dow == Day::Tuesday;
     let split_nitzavim_next_year = rh_dow_next == Day::Monday || rh_dow_next == Day::Tuesday;
-    let regular_shabbosim_list = get_shabbosim(year, &get_yt_list(year, location)).0;
-    let mut parsha_list = if split_nitzavim {
-        let mut v: SmallVec<[Parsha; 256]> = SmallVec::new();
-        v.push(Parsha::Vayelech);
-        v
-    } else {
-        SmallVec::new()
+    let regular_shabbosim_list = get_shabbosim(year, &ignore_dates);
+    let mut parsha_vec = Vec::with_capacity(60);
+
+    if split_nitzavim {
+        parsha_vec.extend(std::iter::once(Parsha::Vayelech));
     };
-    parsha_list.extend_from_slice(&HAAZINU_KI_SISA);
+    parsha_vec.extend_from_slice(&HAAZINU_KI_SISA);
 
     if split_vayakhel {
-        parsha_list.push(Parsha::Vayakhel);
-        parsha_list.push(Parsha::Pikudei);
+        parsha_vec.extend_from_slice(&[Parsha::Vayakhel, Parsha::Pikudei]);
     } else {
-        parsha_list.push(Parsha::VayakhelPikudei);
+        parsha_vec.push(Parsha::VayakhelPikudei);
     }
-    parsha_list.extend_from_slice(&VAYIKRA_SHMINI);
+    parsha_vec.extend_from_slice(&VAYIKRA_SHMINI);
     if split_tazriya {
-        parsha_list.push(Parsha::Tazriya);
-        parsha_list.push(Parsha::Metzorah);
+        parsha_vec.push(Parsha::Tazriya);
+        parsha_vec.push(Parsha::Metzorah);
     } else {
-        parsha_list.push(Parsha::TazriyaMetzorah);
+        parsha_vec.push(Parsha::TazriyaMetzorah);
     }
     if split_acharei {
-        parsha_list.push(Parsha::AchareiMos);
-        parsha_list.push(Parsha::Kedoshim);
+        parsha_vec.push(Parsha::AchareiMos);
+        parsha_vec.push(Parsha::Kedoshim);
     } else {
-        parsha_list.push(Parsha::AchareiMosKedoshim);
+        parsha_vec.push(Parsha::AchareiMosKedoshim);
     }
-    parsha_list.extend_from_slice(&EMOR);
+    parsha_vec.extend_from_slice(&EMOR);
     if split_behar {
-        parsha_list.push(Parsha::Behar);
-        parsha_list.push(Parsha::Bechukosai);
+        parsha_vec.push(Parsha::Behar);
+        parsha_vec.push(Parsha::Bechukosai);
     } else {
-        parsha_list.push(Parsha::BeharBechukosai);
+        parsha_vec.push(Parsha::BeharBechukosai);
     }
-    parsha_list.extend_from_slice(&BAMIDBAR_KORACH);
+    parsha_vec.extend_from_slice(&BAMIDBAR_KORACH);
     if split_chukas {
-        parsha_list.push(Parsha::Chukas);
-        parsha_list.push(Parsha::Balak);
+        parsha_vec.push(Parsha::Chukas);
+        parsha_vec.push(Parsha::Balak);
     } else {
-        parsha_list.push(Parsha::ChukasBalak);
+        parsha_vec.push(Parsha::ChukasBalak);
     }
 
-    parsha_list.extend_from_slice(&PINCHAS);
+    parsha_vec.extend_from_slice(&PINCHAS);
     if split_mattos {
-        parsha_list.push(Parsha::Matos);
-        parsha_list.push(Parsha::Maasei);
+        parsha_vec.push(Parsha::Matos);
+        parsha_vec.push(Parsha::Maasei);
     } else {
-        parsha_list.push(Parsha::MatosMaasei);
+        parsha_vec.push(Parsha::MatosMaasei);
     }
 
-    parsha_list.extend_from_slice(&DEVARIM_KISAVO);
+    parsha_vec.extend_from_slice(&DEVARIM_KISAVO);
     if split_nitzavim_next_year {
-        parsha_list.push(Parsha::Nitzavim);
+        parsha_vec.push(Parsha::Nitzavim);
     } else {
-        parsha_list.push(Parsha::NitzavimVayelech);
+        parsha_vec.push(Parsha::NitzavimVayelech);
     }
-
-    regular_shabbosim_list
-        .iter()
-        .enumerate()
-        .map(|(i, &v)| TorahReadingDay {
-            name: TorahReading::Shabbos(parsha_list[i]),
+    eprintln!(
+        "{}, {:?}, {}",
+        regular_shabbosim_list
+            .iter()
+            .map(|x| format!("{:?}/{}/{}", x.month(), x.day(), x.year()))
+            .fold(String::new(), |old, new| format!("{},{}", old, new)),
+        ignore_dates,
+        year.year()
+    );
+    return_vec.extend(regular_shabbosim_list.iter().enumerate().map(|(i, &v)| {
+        Some(Holiday::TorahReadingDay(TorahReadingDay {
+            name: Name::Shabbos(parsha_vec[i]),
             day: v,
-        })
-        .collect::<SmallVec<[TorahReadingDay; 256]>>()
+        }))
+    }))
 }
 
-pub(crate) fn get_special_parsha_list(year: HebrewYear) -> SmallVec<[TorahReadingDay; 256]> {
+pub(crate) fn get_special_parsha_list(
+    year: &HebrewYear,
+    array_vec: &mut TinyVec<impl tinyvec::Array<Item = Option<Holiday>>>,
+) {
     let rh_dow_next = year.day_of_next_rh;
     let len_of_year = year.year_len;
 
@@ -636,11 +657,11 @@ pub(crate) fn get_special_parsha_list(year: HebrewYear) -> SmallVec<[TorahReadin
         day: if rh_dow_next == Day::Tuesday {
             if len_of_year < 360 {
                 // This is a regular year
-                year.get_hebrew_date(HebrewMonth::Adar, NonZeroI8::new(1).unwrap())
+                year.get_hebrew_date(HebrewMonth::Adar, NonZeroU8::new(1).unwrap())
                     .unwrap()
             } else {
                 // This is a leap year
-                year.get_hebrew_date(HebrewMonth::Adar2, NonZeroI8::new(1).unwrap())
+                year.get_hebrew_date(HebrewMonth::Adar2, NonZeroU8::new(1).unwrap())
                     .unwrap()
             }
         } else {
@@ -652,7 +673,7 @@ pub(crate) fn get_special_parsha_list(year: HebrewYear) -> SmallVec<[TorahReadin
             // This is a regular year
             year.get_hebrew_date(
                 month,
-                NonZeroI8::new(match rh_dow_next {
+                NonZeroU8::new(match rh_dow_next {
                     Day::Monday => 25,
                     Day::Thursday => 29,
                     Day::Shabbos => 27,
@@ -662,7 +683,7 @@ pub(crate) fn get_special_parsha_list(year: HebrewYear) -> SmallVec<[TorahReadin
             )
             .unwrap()
         },
-        name: TorahReading::SpecialParsha(SpecialParsha::Shekalim),
+        name: Name::SpecialParsha(SpecialParsha::Shekalim),
     };
     let zachor = TorahReadingDay {
         //Parshas Zachor is read on the Shabbos before Purim.
@@ -679,10 +700,10 @@ pub(crate) fn get_special_parsha_list(year: HebrewYear) -> SmallVec<[TorahReadin
                 Day::Shabbos => 11,  //For example, 5780
                 _ => panic!(format!("Day is on {:?}, violating ADU rosh", rh_dow_next)),
             };
-            year.get_hebrew_date(month, NonZeroI8::new(day).unwrap())
+            year.get_hebrew_date(month, NonZeroU8::new(day).unwrap())
                 .unwrap()
         },
-        name: TorahReading::SpecialParsha(SpecialParsha::Zachor),
+        name: Name::SpecialParsha(SpecialParsha::Zachor),
     };
     let parah = TorahReadingDay {
         //Parshas Parah is read on the Shabbos before Hachodesh.
@@ -699,10 +720,10 @@ pub(crate) fn get_special_parsha_list(year: HebrewYear) -> SmallVec<[TorahReadin
                 Day::Shabbos => 18,  //For example, 5780
                 _ => panic!(format!("Day is on {:?}, violating ADU rosh", rh_dow_next)),
             };
-            year.get_hebrew_date(month, NonZeroI8::new(day).unwrap())
+            year.get_hebrew_date(month, NonZeroU8::new(day).unwrap())
                 .unwrap()
         },
-        name: TorahReading::SpecialParsha(SpecialParsha::Parah),
+        name: Name::SpecialParsha(SpecialParsha::Parah),
     };
     let hachodesh = TorahReadingDay {
         //Parshas Hachodesh is read on the Shabbos before Rosh Chodesh Nissan, or on Rosh Chodesh
@@ -710,7 +731,7 @@ pub(crate) fn get_special_parsha_list(year: HebrewYear) -> SmallVec<[TorahReadin
         day: {
             if rh_dow_next == Day::Monday {
                 //Hachodesh is read on Rosh Chodesh Nissan itself
-                year.get_hebrew_date(HebrewMonth::Nissan, NonZeroI8::new(1).unwrap())
+                year.get_hebrew_date(HebrewMonth::Nissan, NonZeroU8::new(1).unwrap())
                     .unwrap()
             } else {
                 let month = if len_of_year < 360 {
@@ -724,39 +745,52 @@ pub(crate) fn get_special_parsha_list(year: HebrewYear) -> SmallVec<[TorahReadin
                     Day::Shabbos => 25,  //For example, 5780
                     _ => panic!(format!("Day is on {:?}, violating ADU rosh", rh_dow_next)),
                 };
-                year.get_hebrew_date(month, NonZeroI8::new(day).unwrap())
+                year.get_hebrew_date(month, NonZeroU8::new(day).unwrap())
                     .unwrap()
             }
         },
-        name: TorahReading::SpecialParsha(SpecialParsha::HaChodesh),
+        name: Name::SpecialParsha(SpecialParsha::HaChodesh),
     };
 
-    smallvec![shekalim, zachor, parah, hachodesh]
+    array_vec.extend_from_slice(&[
+        Some(Holiday::TorahReadingDay(shekalim)),
+        Some(Holiday::TorahReadingDay(zachor)),
+        Some(Holiday::TorahReadingDay(parah)),
+        Some(Holiday::TorahReadingDay(hachodesh)),
+    ]);
 }
 
 pub(crate) fn get_shabbosim(
-    year: HebrewYear,
-    ignore_dates: &[TorahReadingDay],
-) -> (Vec<HebrewDate>, Vec<HebrewDate>) {
-    let amnt_days_to_shabbos = Day::Shabbos as u64 - (year.day_of_rh as u64);
+    year: &HebrewYear,
+    ignore_dates: &TinyVec<impl tinyvec::Array<Item = Option<Holiday>>>,
+) -> Vec<HebrewDate> {
+    let amnt_days_to_shabbos = Day::Shabbos as u32 - (year.day_of_rh as u32);
     let mut cur_day = year.days_since_epoch + amnt_days_to_shabbos;
-    let mut return_regular_shabbosim: Vec<HebrewDate> = Vec::new();
-    let mut return_special_shabbosim: Vec<HebrewDate> = Vec::new();
-    while cur_day < year.days_since_epoch + year.year_len {
+    let mut return_regular_shabbosim: Vec<HebrewDate> = Vec::with_capacity(60);
+    while cur_day < year.days_since_epoch + year.year_len as u32 {
         let day = year.get_hebrewdate_from_days_after_rh(cur_day);
-        if ignore_dates.iter().filter(|x| x.day == day).count() == 0 {
+        if ignore_dates
+            .iter()
+            .filter(|x| {
+                if x.is_some() {
+                    x.unwrap().day() == day
+                } else {
+                    false
+                }
+            })
+            .count()
+            == 0
+        {
             return_regular_shabbosim.push(day);
-        } else {
-            return_special_shabbosim.push(day);
         }
 
         cur_day += 7;
     }
-    (return_regular_shabbosim, return_special_shabbosim)
+    return_regular_shabbosim
 }
 
 const HAAZINU_KI_SISA: [Parsha; 22] = [
-    Parsha::Haazinu,
+    Haazinu,
     Parsha::Bereishis,
     Parsha::Noach,
     Parsha::LechLecha,
@@ -806,9 +840,11 @@ mod test {
     #[test]
     fn purim_should_never_start_on_a_friday_night() {
         for i in 3764..9999 {
-            for day in get_chol_list(HebrewYear::new(i).unwrap()).iter() {
-                if day.name == TorahReading::Chol(Chol::Purim) {
-                    assert_ne!(day.day.to_gregorian().weekday(), Weekday::Fri);
+            let mut sum_vec = tinyvec::TinyVec::<[Option<Holiday>; 32]>::new();
+            get_chol_list(&HebrewYear::new(i).unwrap(), &mut sum_vec);
+            for day in sum_vec.iter() {
+                if day.unwrap().name() == Name::Chol(Chol::Purim) {
+                    assert_ne!(day.unwrap().day().to_gregorian().weekday(), Weekday::Fri);
                 }
             }
         }
@@ -816,24 +852,26 @@ mod test {
     #[test]
     fn fasts_should_never_start_on_friday_night() {
         for i in 3764..9999 {
-            for day in get_chol_list(HebrewYear::new(i).unwrap()).iter() {
-                if day.name == TorahReading::Chol(Chol::TzomGedalia)
-                    || day.name == TorahReading::Chol(Chol::TenTeves)
-                    || day.name == TorahReading::Chol(Chol::SeventeenTammuz)
-                    || day.name == TorahReading::Chol(Chol::NineAv)
+            let mut sum_vec = tinyvec::TinyVec::<[Option<Holiday>; 32]>::new();
+            get_chol_list(&HebrewYear::new(i).unwrap(), &mut sum_vec);
+            for day in sum_vec.iter() {
+                if day.unwrap().name() == Name::Chol(Chol::TzomGedalia)
+                    || day.unwrap().name() == Name::Chol(Chol::TenTeves)
+                    || day.unwrap().name() == Name::Chol(Chol::SeventeenTammuz)
+                    || day.unwrap().name() == Name::Chol(Chol::NineAv)
                 {
                     println!(
                         "{:?}  {:?} {:?}",
-                        day.name,
-                        day.day,
-                        day.day.to_gregorian().weekday()
+                        day.unwrap().name(),
+                        day.unwrap().day(),
+                        day.unwrap().day().to_gregorian().weekday()
                     );
-                    assert_ne!(day.day.to_gregorian().weekday(), Weekday::Fri);
+                    assert_ne!(day.unwrap().day().to_gregorian().weekday(), Weekday::Fri);
                 }
                 //Taanis Esther can never be on a Friday night or on a Thursday night
-                if day.name == TorahReading::Chol(Chol::TaanisEsther) {
-                    assert_ne!(day.day.to_gregorian().weekday(), Weekday::Fri);
-                    assert_ne!(day.day.to_gregorian().weekday(), Weekday::Thu);
+                if day.unwrap().name() == Name::Chol(Chol::TaanisEsther) {
+                    assert_ne!(day.unwrap().day().to_gregorian().weekday(), Weekday::Fri);
+                    assert_ne!(day.unwrap().day().to_gregorian().weekday(), Weekday::Thu);
                 }
             }
         }
@@ -845,18 +883,24 @@ mod test {
             for i in 5764..9999 {
                 let y = HebrewYear::new(i).unwrap();
                 let date = if let Ok(date) =
-                    HebrewDate::from_ymd(i, HebrewMonth::Adar, NonZeroI8::new(1).unwrap())
+                    HebrewDate::from_ymd(i, HebrewMonth::Adar, NonZeroU8::new(1).unwrap())
                 {
                     date
                 } else {
-                    HebrewDate::from_ymd(i, HebrewMonth::Adar2, NonZeroI8::new(1).unwrap()).unwrap()
+                    HebrewDate::from_ymd(i, HebrewMonth::Adar2, NonZeroU8::new(1).unwrap()).unwrap()
                 }
                 .to_gregorian();
+                let mut ignore_vec = tinyvec::TinyVec::<[Option<Holiday>; 32]>::new();
+                get_yt_list(&y, *loc, &mut ignore_vec);
+                let mut sum_vec = tinyvec::TinyVec::<[Option<Holiday>; 32]>::new();
+                get_shabbos_list(&y, *loc, &ignore_vec, &mut sum_vec);
                 assert_eq!(
-                    get_shabbos_list(y, *loc)
+                    sum_vec
                         .iter()
-                        .filter(|x| x.name == TorahReading::SpecialParsha(SpecialParsha::Shekalim))
-                        .filter(|x| x.day.to_gregorian() - date > Duration::days(7))
+                        .filter(
+                            |x| x.unwrap().name() == Name::SpecialParsha(SpecialParsha::Shekalim)
+                        )
+                        .filter(|x| x.unwrap().day().to_gregorian() - date > Duration::days(7))
                         .count(),
                     0
                 );
@@ -868,14 +912,22 @@ mod test {
         use chrono::Duration;
         for loc in [Location::Chul, Location::Israel].iter() {
             for i in 5764..9999 {
-                let date = HebrewDate::from_ymd(i, HebrewMonth::Nissan, NonZeroI8::new(1).unwrap())
+                let date = HebrewDate::from_ymd(i, HebrewMonth::Nissan, NonZeroU8::new(1).unwrap())
                     .unwrap()
                     .to_gregorian();
+                let mut sum_vec = tinyvec::TinyVec::<[Option<Holiday>; 32]>::new();
+                let mut ignore_vec = tinyvec::TinyVec::<[Option<Holiday>; 32]>::new();
+                let y = HebrewYear::new(i).unwrap();
+                get_yt_list(&y, *loc, &mut ignore_vec);
+                get_shabbos_list(&y, *loc, &ignore_vec, &mut sum_vec);
+
                 assert_eq!(
-                    get_shabbos_list(HebrewYear::new(i).unwrap(), *loc)
+                    sum_vec
                         .iter()
-                        .filter(|x| x.name == TorahReading::SpecialParsha(SpecialParsha::HaChodesh))
-                        .filter(|x| x.day.to_gregorian() - date > Duration::days(7))
+                        .filter(
+                            |x| x.unwrap().name() == Name::SpecialParsha(SpecialParsha::HaChodesh)
+                        )
+                        .filter(|x| x.unwrap().day().to_gregorian() - date > Duration::days(7))
                         .count(),
                     0
                 );
@@ -889,19 +941,24 @@ mod test {
         for loc in [Location::Chul, Location::Israel].iter() {
             for i in 5764..9999 {
                 let date = if let Ok(date) =
-                    HebrewDate::from_ymd(i, HebrewMonth::Adar, NonZeroI8::new(14).unwrap())
+                    HebrewDate::from_ymd(i, HebrewMonth::Adar, NonZeroU8::new(14).unwrap())
                 {
                     date
                 } else {
-                    HebrewDate::from_ymd(i, HebrewMonth::Adar2, NonZeroI8::new(14).unwrap())
+                    HebrewDate::from_ymd(i, HebrewMonth::Adar2, NonZeroU8::new(14).unwrap())
                         .unwrap()
                 }
                 .to_gregorian();
+                let mut sum_vec = tinyvec::TinyVec::<[Option<Holiday>; 32]>::new();
+                let mut ignore_vec = tinyvec::TinyVec::<[Option<Holiday>; 32]>::new();
+                let y = HebrewYear::new(i).unwrap();
+                get_yt_list(&y, *loc, &mut ignore_vec);
+                get_shabbos_list(&y, *loc, &mut ignore_vec, &mut sum_vec);
                 assert_eq!(
-                    get_shabbos_list(HebrewYear::new(i).unwrap(), *loc)
+                    sum_vec
                         .iter()
-                        .filter(|x| x.name == TorahReading::SpecialParsha(SpecialParsha::Zachor))
-                        .filter(|x| x.day.to_gregorian() - date > Duration::days(7))
+                        .filter(|x| x.unwrap().name() == Name::SpecialParsha(SpecialParsha::Zachor))
+                        .filter(|x| x.unwrap().day().to_gregorian() - date > Duration::days(7))
                         .count(),
                     0
                 );
@@ -911,17 +968,29 @@ mod test {
     #[test]
     fn check_all_shabbosim_and_torah_readings_are_on_shabbos() {
         for i in 5764..9999 {
+            let mut sum_vec = tinyvec::TinyVec::<[Option<Holiday>; 32]>::new();
+            let mut ignore_vec = tinyvec::TinyVec::<[Option<Holiday>; 32]>::new();
+            let y = HebrewYear::new(i).unwrap();
+            get_yt_list(&y, Location::Chul, &mut ignore_vec);
+            get_shabbos_list(&y, Location::Chul, &mut ignore_vec, &mut sum_vec);
+
             assert_eq!(
-                get_shabbos_list(HebrewYear::new(i).unwrap(), Location::Chul)
+                sum_vec
                     .iter()
-                    .filter(|&x| (*x).day.to_gregorian().weekday() != Weekday::Fri)
+                    .filter(|&x| (*x).unwrap().day().to_gregorian().weekday() != Weekday::Fri)
                     .count(),
                 0
             );
+            let mut sum_vec = tinyvec::TinyVec::<[Option<Holiday>; 32]>::new();
+            let mut ignore_vec = tinyvec::TinyVec::<[Option<Holiday>; 32]>::new();
+            let y = HebrewYear::new(i).unwrap();
+            get_yt_list(&y, Location::Chul, &mut ignore_vec);
+            get_shabbos_list(&y, Location::Chul, &ignore_vec, &mut sum_vec);
+
             assert_eq!(
-                get_shabbos_list(HebrewYear::new(i).unwrap(), Location::Israel)
+                sum_vec
                     .iter()
-                    .filter(|&x| (*x).day.to_gregorian().weekday() != Weekday::Fri)
+                    .filter(|&x| (*x).unwrap().day().to_gregorian().weekday() != Weekday::Fri)
                     .count(),
                 0
             );
@@ -933,27 +1002,51 @@ mod test {
         for i in 5764..9999 {
             println!("{}", i);
             println!("Getting chul yt list");
-            get_yt_list(HebrewYear::new(i).unwrap(), Location::Chul);
+            let mut sum_vec = tinyvec::TinyVec::<[Option<Holiday>; 32]>::new();
+
+            get_yt_list(&HebrewYear::new(i).unwrap(), Location::Chul, &mut sum_vec);
+            sum_vec.clear();
             println!("Getting eretz yt list");
-            get_yt_list(HebrewYear::new(i).unwrap(), Location::Israel);
+            get_yt_list(&HebrewYear::new(i).unwrap(), Location::Israel, &mut sum_vec);
+            sum_vec.clear();
             println!("Getting chol list");
-            get_chol_list(HebrewYear::new(i).unwrap());
+            get_chol_list(&HebrewYear::new(i).unwrap(), &mut sum_vec);
+        }
+    }
+
+    #[test]
+    fn large_dates() {
+        use std::convert::TryInto;
+        for i in 200_000..210_000 {
+            println!("{}", i);
+            println!("Getting chul yt list");
+            let mut sum_vec = tinyvec::TinyVec::<[Option<Holiday>; 32]>::new();
+
+            get_yt_list(&HebrewYear::new(i).unwrap(), Location::Chul, &mut sum_vec);
+            sum_vec.clear();
+            println!("Getting eretz yt list");
+            get_yt_list(&HebrewYear::new(i).unwrap(), Location::Israel, &mut sum_vec);
+            sum_vec.clear();
+            println!("Getting chol list");
+            get_chol_list(&HebrewYear::new(i).unwrap(), &mut sum_vec);
+            let english: NaiveDateTime =
+                HebrewDate::from_ymd(i, HebrewMonth::Elul, std::num::NonZeroU8::new(29).unwrap())
+                    .unwrap()
+                    .try_into()
+                    .unwrap();
         }
     }
 
     #[test]
     fn get_shabbosim_fall_on_shabbos() {
         for i in 3764..9999 {
-            get_shabbosim(HebrewYear::new(i).unwrap(), &[])
-                .0
-                .iter()
-                //Shabbos starts on _Friday_ night
-                .for_each(|x| assert_eq!(x.to_gregorian().weekday(), Weekday::Fri));
-            get_shabbosim(HebrewYear::new(i).unwrap(), &[])
-                .1
-                .iter()
-                //Shabbos starts on _Friday_ night
-                .for_each(|x| assert_eq!(x.to_gregorian().weekday(), Weekday::Fri));
+            get_shabbosim(
+                &HebrewYear::new(i).unwrap(),
+                &tinyvec::TinyVec::<[Option<Holiday>; 32]>::new(),
+            )
+            .iter()
+            //Shabbos starts on _Friday_ night
+            .for_each(|x| assert_eq!(x.to_gregorian().weekday(), Weekday::Fri));
         }
     }
 }

@@ -3,13 +3,33 @@ use std::cmp::Ordering;
 
 use crate::convert::HebrewDate;
 
+#[derive(Debug, Eq, Copy, Clone, Serialize, PartialEq)]
+#[non_exhaustive]
+pub enum Holiday {
+    TorahReadingDay(TorahReadingDay),
+}
+
+impl Holiday {
+    #[inline]
+    pub fn day(&self) -> HebrewDate {
+        match self {
+            Holiday::TorahReadingDay(t) => t.day(),
+        }
+    }
+    #[inline]
+    pub fn name(&self) -> Name {
+        match self {
+            Holiday::TorahReadingDay(t) => t.name(),
+        }
+    }
+}
 #[derive(Debug, Eq, Copy, Clone, Serialize)]
 /// This struct holds a day on which the Torah is read.
 ///
 /// You can get the Hebrew Date and the Torah reading.
 pub struct TorahReadingDay {
     pub(crate) day: HebrewDate,
-    pub(crate) name: TorahReading,
+    pub(crate) name: Name,
 }
 
 impl TorahReadingDay {
@@ -19,7 +39,7 @@ impl TorahReadingDay {
     }
 
     #[inline]
-    pub fn name(&self) -> TorahReading {
+    pub fn name(&self) -> Name {
         self.name
     }
 }
@@ -79,7 +99,8 @@ pub enum YomTov {
 }
 
 #[derive(Eq, PartialEq, Debug, Copy, Clone, Serialize, Deserialize)]
-pub enum TorahReading {
+#[non_exhaustive]
+pub enum Name {
     YomTov(YomTov),
     Chol(Chol),
     Shabbos(Parsha),

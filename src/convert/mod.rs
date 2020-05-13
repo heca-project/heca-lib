@@ -1,9 +1,10 @@
 use chrono::{DateTime, Duration, Utc};
 
-use crate::prelude::*;
+use crate::{convert::year::backend::day_of_last_rh, prelude::*};
 use serde::ser::SerializeStruct;
 use serde::Serialize;
-use std::num::NonZeroI8;
+use std::convert::TryInto;
+use std::num::NonZeroU8;
 
 mod year;
 #[doc(inline)]
@@ -12,7 +13,7 @@ pub use year::*;
 #[derive(Debug, Copy, Clone)]
 /// HebrewDate holds a specific Hebrew Date. It can be constructed individually or through HebrewYear.
 pub struct HebrewDate {
-    day: NonZeroI8,
+    day: NonZeroU8,
     month: HebrewMonth,
     year: HebrewYear,
 }
@@ -84,23 +85,18 @@ impl HebrewDate {
     ///
     /// Day must be above zero. If it's below zero, the function returns TooManyDaysInMonth. In a future release, day will be a NonZeroU8 so that it will be impossible to supply a negative number.
     pub fn from_ymd(
-        year: u64,
+        year: i32,
         month: HebrewMonth,
-        day: NonZeroI8,
+        day: NonZeroU8,
     ) -> Result<HebrewDate, ConversionError> {
         HebrewYear::new(year)?.get_hebrew_date(month, day)
     }
 
     pub(crate) fn from_ymd_internal(
         month: HebrewMonth,
-        day: NonZeroI8, //TODO: Make NonZeroU8
+        day: NonZeroU8,
         hebrew_year: HebrewYear,
     ) -> Result<HebrewDate, ConversionError> {
-        if day.get() < 0 {
-            return Err(ConversionError::TooManyDaysInMonth(
-                hebrew_year.sched[month as usize],
-            )); //TODO: Remove when day is NonZeroU8
-        }
         //Get a HebrewDate object from the Hebrew Year, Month, and Day. Can fail if the year is too
         //small or the day is less than one.
         if !hebrew_year.is_leap_year()
@@ -115,7 +111,7 @@ impl HebrewDate {
 
         if day.get() as u8 > hebrew_year.sched[month as usize] {
             return Err(ConversionError::TooManyDaysInMonth(
-                hebrew_year.sched[month as usize],
+                NonZeroU8::new(hebrew_year.sched[month as usize]).unwrap(),
             ));
         }
 
@@ -126,21 +122,19 @@ impl HebrewDate {
         })
     }
 
-    fn from_gregorian(date: DateTime<Utc>) -> Result<HebrewDate, ConversionError> {
-        if date < *crate::convert::year::backend::FIRST_RH + Duration::days(2 + 365) {
+    fn from_gregorian(date: chrono::NaiveDateTime) -> Result<HebrewDate, ConversionError> {
+        if date < (*crate::convert::year::backend::FIRST_RH + Duration::days(2 + 365)) {
             return Err(ConversionError::YearTooSmall);
         }
         let days_since_first_rh =
-            ((date - *crate::convert::year::backend::FIRST_RH).num_days() + 2) as u64;
+            ((date - *crate::convert::year::backend::FIRST_RH).num_days() + 2) as u32;
 
-        let hebrew_year = HebrewYear::new(crate::convert::year::backend::day_of_last_rh(
-            days_since_first_rh,
-        ))
-        .unwrap();
+        let hebrew_year =
+            HebrewYear::new(day_of_last_rh(days_since_first_rh).try_into().unwrap()).unwrap();
         Ok(hebrew_year.get_hebrewdate_from_days_after_rh(days_since_first_rh))
     }
 
-    pub(crate) fn to_gregorian(&self) -> DateTime<Utc> {
+    pub(crate) fn to_gregorian(&self) -> chrono::NaiveDateTime {
         let amnt_days_between_rh_and_epoch = self.year.days_since_epoch;
         let sched = self.year.sched;
         let mut amnt_days_in_month: u16 = 0;
@@ -150,14 +144,15 @@ impl HebrewDate {
             }
         }
 
-        let amnt_days =
-            amnt_days_between_rh_and_epoch + u64::from(amnt_days_in_month) + self.day.get() as u64
-                - 1;
+        let amnt_days = amnt_days_between_rh_and_epoch as u32
+            + u64::from(amnt_days_in_month) as u32
+            + self.day.get() as u32
+            - 1;
         *crate::convert::year::backend::EPOCH + Duration::days(amnt_days as i64)
     }
     ///Get the Hebrew day of month.
     #[inline]
-    pub fn day(&self) -> NonZeroI8 {
+    pub fn day(&self) -> NonZeroU8 {
         self.day
     }
 
@@ -170,7 +165,7 @@ impl HebrewDate {
     ///Get the Hebrew year.
 
     #[inline]
-    pub fn year(&self) -> u64 {
+    pub fn year(&self) -> i32 {
         self.year.year
     }
 }
@@ -181,28 +176,13 @@ mod tests {
         use super::*;
         use chrono::prelude::*;
         for j in 0..100 {
-            let mut original_day = Utc.ymd(16 + j, 10, 4).and_hms(18, 0, 0);
+            let mut original_day = NaiveDate::from_ymd(16 + j, 10, 4).and_hms(18, 0, 0);
             for _i in 1..366 {
                 let h_day = HebrewDate::from_gregorian(original_day).unwrap();
                 let ne_day = h_day.to_gregorian();
                 assert_eq!(original_day, ne_day);
                 original_day = original_day + Duration::days(1);
             }
-        }
-    }
-
-    #[test]
-    fn from_ymd_negative() {
-        use crate::prelude::*;
-        use crate::HebrewYear;
-        use std::num::NonZeroI8;
-        let a: ConversionError = HebrewYear::new(5779)
-            .unwrap()
-            .get_hebrew_date(HebrewMonth::Shvat, NonZeroI8::new(-1).unwrap())
-            .unwrap_err();
-        if let ConversionError::TooManyDaysInMonth(_) = a {
-        } else {
-            panic!("A is not a TooManyDaysInMonth");
         }
     }
 }

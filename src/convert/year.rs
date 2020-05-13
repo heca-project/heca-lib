@@ -1,15 +1,14 @@
 use std::convert::{TryFrom, TryInto};
 
-use smallvec::*;
-
 use crate::convert::year::backend::{CHALAKIM_BETWEEN_MOLAD, FIRST_MOLAD};
 use crate::convert::*;
 use crate::holidays::get_chol_list;
 use crate::holidays::get_shabbos_list;
 use crate::holidays::get_special_parsha_list;
 use crate::holidays::get_yt_list;
-use chrono::{Duration, Utc};
-use std::num::NonZeroI8;
+use chrono::{Datelike, Duration, NaiveDate, NaiveDateTime};
+use std::num::NonZeroU8;
+use tinyvec::TinyVec;
 
 pub(crate) mod backend;
 
@@ -24,35 +23,35 @@ use crate::prelude::{ConversionError, HebrewMonth, Molad};
 /// an existing HebrewYear rather than generating each one on its own.
 #[derive(Copy, Clone, Debug)]
 pub struct HebrewYear {
-    pub(crate) year: u64,
+    pub(crate) year: i32,
     pub(crate) day_of_rh: Day,
     pub(crate) day_of_next_rh: Day,
-    pub(crate) months_per_year: u64,
+    pub(crate) months_per_year: u8,
     pub(crate) sched: [u8; 14],
-    pub(crate) year_len: u64,
-    pub(crate) days_since_epoch: u64,
+    pub(crate) year_len: u16,
+    pub(crate) days_since_epoch: u32,
     pub(crate) chalakim_since_epoch: u64,
 }
 
 impl HebrewYear {
     #[inline]
-    pub fn new(year: u64) -> Result<HebrewYear, ConversionError> {
+    pub fn new(year: i32) -> Result<HebrewYear, ConversionError> {
         //! Returns a new HebrewYear on success or a ConversionError on failure.
         //!
         //! # Arguments
         //!
         //! `year` - The Hebrew year
         //!
-        if year < FIRST_YEAR + 1 {
+        if year < (FIRST_YEAR + 1) as i32 {
             Err(ConversionError::YearTooSmall)
         } else {
             let cur_rh = get_rosh_hashana(year);
             let next_rh = get_rosh_hashana(year + 1);
             let days_since_epoch = cur_rh.0;
             let chalakim_since_epoch = cur_rh.2;
-            let year_len = next_rh.0 - cur_rh.0;
+            let year_len = (next_rh.0 - cur_rh.0) as u16;
             let months_per_year = months_per_year(year);
-            let sched = &YEAR_SCHED[return_year_sched(year_len)];
+            let sched = &YEAR_SCHED[return_year_sched(year_len as u16)];
 
             Ok(HebrewYear {
                 day_of_rh: get_rosh_hashana(year).1,
@@ -197,7 +196,7 @@ impl HebrewYear {
     /// # Examples:
     ///
     /// ```
-    /// use std::num::NonZeroI8;
+    /// use std::num:: NonZeroU8;
     /// use heca_lib::prelude::*;
     /// use heca_lib::{HebrewDate, HebrewYear};
     /// let year = HebrewYear::new(5779)?;
@@ -205,7 +204,7 @@ impl HebrewYear {
     /// # Ok::<(),ConversionError>(())
     /// ```
     #[inline]
-    pub fn year(&self) -> u64 {
+    pub fn year(&self) -> i32 {
         self.year
     }
     /// Returns a HebrewDate from the current year and a supplied month and day.
@@ -219,13 +218,13 @@ impl HebrewYear {
     /// # Examples:
     ///
     /// ```
-    /// use std::num::NonZeroI8;
+    /// use std::num:: NonZeroU8;
     /// use heca_lib::prelude::*;
     /// use heca_lib::{HebrewDate, HebrewYear};
     /// let year = HebrewYear::new(5779)?;
     /// assert_eq!(
-    ///        year.get_hebrew_date(HebrewMonth::Tishrei, NonZeroI8::new(10).unwrap())?,
-    ///        HebrewDate::from_ymd(5779, HebrewMonth::Tishrei, NonZeroI8::new(10).unwrap())?
+    ///        year.get_hebrew_date(HebrewMonth::Tishrei,  NonZeroU8::new(10).unwrap())?,
+    ///        HebrewDate::from_ymd(5779, HebrewMonth::Tishrei,  NonZeroU8::new(10).unwrap())?
     ///  );
     /// # Ok::<(),ConversionError>(())
     /// ```
@@ -237,25 +236,25 @@ impl HebrewYear {
     pub fn get_hebrew_date(
         self,
         month: HebrewMonth,
-        day: NonZeroI8,
+        day: NonZeroU8,
     ) -> Result<HebrewDate, ConversionError> {
         HebrewDate::from_ymd_internal(month, day, self)
     }
 
-    pub(crate) fn get_hebrewdate_from_days_after_rh(self, amnt_days: u64) -> HebrewDate {
+    pub(crate) fn get_hebrewdate_from_days_after_rh(self, amnt_days: u32) -> HebrewDate {
         let mut remainder = amnt_days - self.days_since_epoch;
         let mut month: u64 = 0;
         for days_in_month in self.sched.iter() {
-            if remainder < u64::from(*days_in_month) {
+            if remainder < u32::from(*days_in_month) {
                 break;
             }
             month += 1;
-            remainder -= u64::from(*days_in_month);
+            remainder -= u32::from(*days_in_month);
         }
         HebrewDate {
             year: self,
-            month: HebrewMonth::from(month),
-            day: NonZeroI8::new((remainder + 1) as i8).unwrap(),
+            month: HebrewMonth::try_from(month as u8).unwrap(),
+            day: NonZeroU8::new((remainder + 1) as u8).unwrap(),
         }
     }
     /// Returns all the days when the Torah is read.
@@ -281,27 +280,27 @@ impl HebrewYear {
     /// # Examples
     ///
     /// ```
-    /// use std::num::NonZeroI8;
+    /// use std::num:: NonZeroU8;
     /// use heca_lib::prelude::*;
     /// use heca_lib::{HebrewDate, HebrewYear};
     /// let year = HebrewYear::new(5779)?;
-    /// let shabbosim = year.get_holidays(Location::Chul, &[TorahReadingType::Shabbos, TorahReadingType::SpecialParsha, TorahReadingType::Chol, TorahReadingType::YomTov]);
+    /// let shabbosim = year.get_holidays_vec(Location::Chul, &[TorahReadingType::Shabbos, TorahReadingType::SpecialParsha, TorahReadingType::Chol, TorahReadingType::YomTov]);
     /// let mut count = 0;
     /// for s in shabbosim.into_iter() {
-    ///   if s.name() == TorahReading::Shabbos(Parsha::Bereishis) {
-    ///     assert_eq!(s.day(), HebrewDate::from_ymd(5779,HebrewMonth::Tishrei, NonZeroI8::new(27).unwrap())?);
+    ///   if s.name() == Name::Shabbos(Parsha::Bereishis) {
+    ///     assert_eq!(s.day(), HebrewDate::from_ymd(5779,HebrewMonth::Tishrei,  NonZeroU8::new(27).unwrap())?);
     ///     count += 1;
     ///   }
-    ///   else if s.name() == TorahReading::SpecialParsha(SpecialParsha::Zachor) {
-    ///     assert_eq!(s.day(), HebrewDate::from_ymd(5779,HebrewMonth::Adar2, NonZeroI8::new(9).unwrap())?);
+    ///   else if s.name() == Name::SpecialParsha(SpecialParsha::Zachor) {
+    ///     assert_eq!(s.day(), HebrewDate::from_ymd(5779,HebrewMonth::Adar2,  NonZeroU8::new(9).unwrap())?);
     ///     count += 1;
     ///   }
-    ///   else if s.name() == TorahReading::Chol(Chol::Chanukah1) {
-    ///     assert_eq!(s.day(), HebrewDate::from_ymd(5779,HebrewMonth::Kislev, NonZeroI8::new(25).unwrap())?);
+    ///   else if s.name() == Name::Chol(Chol::Chanukah1) {
+    ///     assert_eq!(s.day(), HebrewDate::from_ymd(5779,HebrewMonth::Kislev,  NonZeroU8::new(25).unwrap())?);
     ///     count += 1;
     ///   }
-    ///   else if s.name() == TorahReading::YomTov(YomTov::Shavuos1) {
-    ///     assert_eq!(s.day(), HebrewDate::from_ymd(5779,HebrewMonth::Sivan, NonZeroI8::new(6).unwrap())?);
+    ///   else if s.name() == Name::YomTov(YomTov::Shavuos1) {
+    ///     assert_eq!(s.day(), HebrewDate::from_ymd(5779,HebrewMonth::Sivan,  NonZeroU8::new(6).unwrap())?);
     ///     count += 1;
     ///   }
     /// }
@@ -312,23 +311,36 @@ impl HebrewYear {
         &self,
         location: Location,
         yt_types: &[TorahReadingType],
-    ) -> SmallVec<[TorahReadingDay; 256]> {
-        let mut return_vec: SmallVec<[TorahReadingDay; 256]> = SmallVec::new();
+        array_vec: &mut TinyVec<impl tinyvec::Array<Item = Option<Holiday>>>,
+    ) {
         if yt_types.contains(&TorahReadingType::YomTov) {
-            return_vec.extend_from_slice(&get_yt_list(self.clone(), location));
+            get_yt_list(&self, location, array_vec)
         }
         if yt_types.contains(&TorahReadingType::Chol) {
-            return_vec.extend_from_slice(&get_chol_list(self.clone()));
+            get_chol_list(self, array_vec);
         }
         if yt_types.contains(&TorahReadingType::Shabbos) {
-            return_vec.extend_from_slice(&get_shabbos_list(self.clone(), location));
+            let mut ignore_vec = tinyvec::TinyVec::<[Option<Holiday>; 32]>::new();
+            get_yt_list(&self, location, &mut ignore_vec);
+            get_shabbos_list(self, location, &ignore_vec, array_vec);
         }
         if yt_types.contains(&TorahReadingType::SpecialParsha) {
-            return_vec.extend_from_slice(&get_special_parsha_list(self.clone()));
+            get_special_parsha_list(self, array_vec)
         }
-        return_vec
     }
 
+    pub fn get_holidays_vec(
+        &self,
+        location: Location,
+        yt_types: &[TorahReadingType],
+    ) -> Vec<Holiday> {
+        let mut collect_vec = tinyvec::TinyVec::<[Option<Holiday>; 32]>::new();
+        self.get_holidays(location, yt_types, &mut collect_vec);
+        collect_vec
+            .into_iter()
+            .filter_map(|x| if x.is_some() { x } else { None })
+            .collect()
+    }
     /// Returns the Molad of a given month, or a ConversionError if trying to get Molad of a month which is does not exist in that year.
     ///
     /// # Note:
@@ -370,13 +382,13 @@ impl HebrewYear {
                 Adar1 => return Err(ConversionError::IsNotLeapYear),
                 Adar2 => return Err(ConversionError::IsNotLeapYear),
             }
-        } * CHALAKIM_BETWEEN_MOLAD
+        } * CHALAKIM_BETWEEN_MOLAD as u64
             + self.chalakim_since_epoch
-            + FIRST_MOLAD;
-        let minutes_since_epoch = (chalakim_since_epoch / (CHALAKIM_PER_HOUR / 60))
+            + FIRST_MOLAD as u64;
+        let minutes_since_epoch = (chalakim_since_epoch / (CHALAKIM_PER_HOUR as u64 / 60))
             .try_into()
             .unwrap();
-        let remainder = (chalakim_since_epoch % (CHALAKIM_PER_HOUR / 60))
+        let remainder = (chalakim_since_epoch % (CHALAKIM_PER_HOUR as u64 / 60))
             .try_into()
             .unwrap();
         let day = EPOCH.clone() + Duration::minutes(minutes_since_epoch);
@@ -392,7 +404,7 @@ fn test_get_molad() {
     assert_eq!(
         p,
         Molad {
-            day: Utc.ymd(2019, 9, 29).and_hms(5, 50, 0),
+            day: NaiveDate::from_ymd(2019, 9, 29).and_hms(5, 50, 0),
             remainder: 5
         }
     );
@@ -400,7 +412,7 @@ fn test_get_molad() {
     assert_eq!(
         p,
         Molad {
-            day: Utc.ymd(2019, 10, 28).and_hms(18, 34, 0),
+            day: NaiveDate::from_ymd(2019, 10, 28).and_hms(18, 34, 0),
             remainder: 6
         }
     );
@@ -410,7 +422,7 @@ fn test_get_molad() {
     assert_eq!(
         p,
         Molad {
-            day: Utc.ymd(2021, 8, 8).and_hms(10, 43, 0),
+            day: NaiveDate::from_ymd(2021, 8, 8).and_hms(10, 43, 0),
             remainder: 10
         }
     );
@@ -441,41 +453,41 @@ fn test_get_molad() {
 /// I'm trying to be a _bit_ more precise, so I made the date cutoff at 6:00 PM. So for example:
 ///
 /// ```
-/// use std::num::NonZeroI8;
+/// use std::num:: NonZeroU8;
 /// use std::convert::TryInto;
 ///
-/// use chrono::Utc;
+/// use chrono::prelude::*;
 /// use chrono::offset::TimeZone;
 /// use heca_lib::prelude::*;
 /// use heca_lib::HebrewDate;
 ///
-/// let hebrew_date: HebrewDate = Utc.ymd(2018,9,10).and_hms(17,59,59).try_into()?;
-/// assert_eq!(hebrew_date,HebrewDate::from_ymd(5779,HebrewMonth::Tishrei,NonZeroI8::new(1).unwrap())?);
+/// let hebrew_date: HebrewDate = NaiveDate::from_ymd(2018,9,10).and_hms(17,59,59).try_into()?;
+/// assert_eq!(hebrew_date,HebrewDate::from_ymd(5779,HebrewMonth::Tishrei, NonZeroU8::new(1).unwrap())?);
 /// # Ok::<(),ConversionError>(())
 /// ```
 ///
 /// while
 ///
 /// ```
-/// use std::num::NonZeroI8;
+/// use std::num:: NonZeroU8;
 /// use std::convert::TryInto;
 ///
-/// use chrono::Utc;
+/// use chrono::prelude::*;
 /// use chrono::offset::TimeZone;
 /// use heca_lib::prelude::*;
 /// use heca_lib::HebrewDate;
 ///
 ///
-/// let hebrew_date: HebrewDate = Utc.ymd(2018,9,10).and_hms(18,0,0).try_into()?;
-/// assert_eq!(hebrew_date, HebrewDate::from_ymd(5779,HebrewMonth::Tishrei,NonZeroI8::new(2).unwrap())?);
+/// let hebrew_date: HebrewDate = NaiveDate::from_ymd(2018,9,10).and_hms(18,0,0).try_into()?;
+/// assert_eq!(hebrew_date, HebrewDate::from_ymd(5779,HebrewMonth::Tishrei, NonZeroU8::new(2).unwrap())?);
 /// # Ok::<(),ConversionError>(())
 /// ```
 /// # Error Values:
 /// * YearTooSmall - This algorithm won't work if the year is before year 4.
 ///
-impl TryFrom<DateTime<Utc>> for HebrewDate {
+impl TryFrom<NaiveDateTime> for HebrewDate {
     type Error = ConversionError;
-    fn try_from(original_day: DateTime<Utc>) -> Result<HebrewDate, ConversionError> {
+    fn try_from(original_day: NaiveDateTime) -> Result<HebrewDate, ConversionError> {
         HebrewDate::from_gregorian(original_day)
     }
 }
@@ -488,14 +500,14 @@ impl TryFrom<DateTime<Utc>> for HebrewDate {
 ///
 /// For example, Yom Kippur 5779 started at sunset of September 18, 2018. So
 /// ```
-/// use std::num::NonZeroI8;
+/// use std::num:: NonZeroU8;
 ///
 /// use chrono::prelude::*;
 /// use heca_lib::prelude::*;
 /// use heca_lib::HebrewDate;
 ///
-/// let gregorian_date: DateTime<Utc> = HebrewDate::from_ymd(5779,HebrewMonth::Tishrei,NonZeroI8::new(10).unwrap())?.into();
-/// assert_eq!(gregorian_date ,Utc.ymd(2018, 9,18).and_hms(18,00,00));
+/// let gregorian_date: NaiveDateTime = HebrewDate::from_ymd(5779,HebrewMonth::Tishrei, NonZeroU8::new(10).unwrap())?.into();
+/// assert_eq!(gregorian_date ,NaiveDate::from_ymd(2018, 9,18).and_hms(18,00,00));
 /// # Ok::<(),ConversionError>(())
 /// ```
 /// ## Algorithm:
@@ -537,9 +549,10 @@ impl TryFrom<DateTime<Utc>> for HebrewDate {
 ///  So there's a last little bit:
 ///
 /// 14. Cheshvan and Kislev are variable length months – some years both are full, some years both are empty, and some years Cheshvan is full and Kislev is empty - depending on the day Rosh Hashana starts (and the day _the next Rosh Hashana starts_) and how many days are in the year.
-impl From<HebrewDate> for DateTime<Utc> {
+impl From<HebrewDate> for NaiveDateTime {
     fn from(h: HebrewDate) -> Self {
-        h.to_gregorian()
+        let result = h.to_gregorian();
+        NaiveDate::from_ymd(result.year(), result.month(), result.day()).and_hms(18, 0, 0)
     }
 }
 
@@ -568,7 +581,7 @@ mod test {
                 | MonthSchedule::BaShaH
                 | MonthSchedule::BaChaH
                 | MonthSchedule::ZaShaH => assert_eq!(
-                    y.get_hebrew_date(HebrewMonth::Nissan, NonZeroI8::new(16).unwrap())
+                    y.get_hebrew_date(HebrewMonth::Nissan, NonZeroU8::new(16).unwrap())
                         .unwrap()
                         .to_gregorian()
                         .weekday(),
@@ -579,21 +592,21 @@ mod test {
                 | MonthSchedule::ZaShaG
                 | MonthSchedule::ZaChaG
                 | MonthSchedule::BaChaG => assert_eq!(
-                    y.get_hebrew_date(HebrewMonth::Nissan, NonZeroI8::new(16).unwrap())
+                    y.get_hebrew_date(HebrewMonth::Nissan, NonZeroU8::new(16).unwrap())
                         .unwrap()
                         .to_gregorian()
                         .weekday(),
                     Weekday::Tue
                 ),
                 MonthSchedule::HaShA | MonthSchedule::ZaChA | MonthSchedule::HaChA => assert_eq!(
-                    y.get_hebrew_date(HebrewMonth::Nissan, NonZeroI8::new(16).unwrap())
+                    y.get_hebrew_date(HebrewMonth::Nissan, NonZeroU8::new(16).unwrap())
                         .unwrap()
                         .to_gregorian()
                         .weekday(),
                     Weekday::Sun
                 ),
                 MonthSchedule::HaKaZ | MonthSchedule::BaShaZ | MonthSchedule::GaKaZ => assert_eq!(
-                    y.get_hebrew_date(HebrewMonth::Nissan, NonZeroI8::new(16).unwrap())
+                    y.get_hebrew_date(HebrewMonth::Nissan, NonZeroU8::new(16).unwrap())
                         .unwrap()
                         .to_gregorian()
                         .weekday(),

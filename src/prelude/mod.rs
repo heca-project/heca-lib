@@ -1,9 +1,10 @@
 mod location;
-use chrono::Utc;
 #[doc(inline)]
 pub use location::*;
 use serde::{Deserialize, Serialize};
+use std::convert::TryFrom;
 use std::fmt;
+use std::num::NonZeroU8;
 
 #[derive(Debug, PartialEq, Eq, Ord, PartialOrd, Copy, Clone, Serialize, Deserialize)]
 pub enum Day {
@@ -17,29 +18,30 @@ pub enum Day {
 }
 
 /// Notes: This panics if input is larger than 6, so this will be converted to a TryFrom in a future release.
-impl From<u64> for Day {
-    fn from(input: u64) -> Self {
+impl TryFrom<u8> for Day {
+    type Error = ConversionError;
+    fn try_from(input: u8) -> Result<Self, ConversionError> {
         match input {
-            0 => Day::Sunday,
-            1 => Day::Monday,
-            2 => Day::Tuesday,
-            3 => Day::Wednesday,
-            4 => Day::Thursday,
-            5 => Day::Friday,
-            6 => Day::Shabbos,
-            _ => panic!(format!("{} Is out of bounds", input)),
+            0 => Ok(Day::Sunday),
+            1 => Ok(Day::Monday),
+            2 => Ok(Day::Tuesday),
+            3 => Ok(Day::Wednesday),
+            4 => Ok(Day::Thursday),
+            5 => Ok(Day::Friday),
+            6 => Ok(Day::Shabbos),
+            _ => Err(ConversionError::TooManyDaysInWeek),
         }
     }
 }
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone, Ord, PartialOrd)]
 pub struct Molad {
-    pub(crate) day: chrono::DateTime<Utc>,
+    pub(crate) day: chrono::NaiveDateTime,
     pub(crate) remainder: u16,
 }
 
 impl Molad {
-    pub fn get_day_utc(&self) -> chrono::DateTime<Utc> {
+    pub fn get_day_utc(&self) -> chrono::NaiveDateTime {
         self.day
     }
     pub fn get_chalakim(&self) -> u16 {
@@ -63,24 +65,25 @@ pub enum HebrewMonth {
     Av,
     Elul,
 }
-impl From<u64> for HebrewMonth {
-    fn from(input: u64) -> Self {
+impl TryFrom<u8> for HebrewMonth {
+    type Error = ConversionError;
+    fn try_from(input: u8) -> Result<Self, Self::Error> {
         match input {
-            0 => HebrewMonth::Tishrei,
-            1 => HebrewMonth::Cheshvan,
-            2 => HebrewMonth::Kislev,
-            3 => HebrewMonth::Teves,
-            4 => HebrewMonth::Shvat,
-            5 => HebrewMonth::Adar,
-            6 => HebrewMonth::Adar1,
-            7 => HebrewMonth::Adar2,
-            8 => HebrewMonth::Nissan,
-            9 => HebrewMonth::Iyar,
-            10 => HebrewMonth::Sivan,
-            11 => HebrewMonth::Tammuz,
-            12 => HebrewMonth::Av,
-            13 => HebrewMonth::Elul,
-            _ => panic!(format!("{} Is out of bounds", input)),
+            0 => Ok(HebrewMonth::Tishrei),
+            1 => Ok(HebrewMonth::Cheshvan),
+            2 => Ok(HebrewMonth::Kislev),
+            3 => Ok(HebrewMonth::Teves),
+            4 => Ok(HebrewMonth::Shvat),
+            5 => Ok(HebrewMonth::Adar),
+            6 => Ok(HebrewMonth::Adar1),
+            7 => Ok(HebrewMonth::Adar2),
+            8 => Ok(HebrewMonth::Nissan),
+            9 => Ok(HebrewMonth::Iyar),
+            10 => Ok(HebrewMonth::Sivan),
+            11 => Ok(HebrewMonth::Tammuz),
+            12 => Ok(HebrewMonth::Av),
+            13 => Ok(HebrewMonth::Elul),
+            _ => Err(ConversionError::TooManyHebrewMonths),
         }
     }
 }
@@ -94,9 +97,9 @@ pub enum ConversionError {
     /// ```
     /// # use heca_lib::prelude::*;
     /// # use heca_lib::HebrewDate;
-    /// # use std::num::NonZeroI8;
+    /// # use std::num::NonZeroU8;
     /// #
-    /// let result = HebrewDate::from_ymd(5778,HebrewMonth::Adar1,NonZeroI8::new(1).unwrap());
+    /// let result = HebrewDate::from_ymd(5778,HebrewMonth::Adar1,NonZeroU8::new(1).unwrap());
     /// assert!(!result.is_ok());
     /// assert_eq!(result.unwrap_err(),ConversionError::IsNotLeapYear);
     /// ```
@@ -108,13 +111,16 @@ pub enum ConversionError {
     /// ```
     /// # use heca_lib::prelude::*;
     /// # use heca_lib::HebrewDate;
-    /// # use std::num::NonZeroI8;
+    /// # use std::num::NonZeroU8;
     /// #
-    /// let result = HebrewDate::from_ymd(5778,HebrewMonth::Adar,NonZeroI8::new(40).unwrap());
+    /// let result = HebrewDate::from_ymd(5778,HebrewMonth::Adar,NonZeroU8::new(40).unwrap());
     /// assert!(!result.is_ok());
-    /// assert_eq!(result.unwrap_err(),ConversionError::TooManyDaysInMonth(29));
+    /// assert_eq!(result.unwrap_err(),ConversionError::TooManyDaysInMonth(NonZeroU8::new(29).unwrap()));
     /// ```
-    TooManyDaysInMonth(u8),
+    TooManyDaysInMonth(NonZeroU8),
+
+    TooManyDaysInWeek,
+    TooManyHebrewMonths,
 
     /// Occurs when attempting to get a regular Adar in a leap year.
     ///
@@ -122,9 +128,9 @@ pub enum ConversionError {
     /// ```
     /// # use heca_lib::prelude::*;
     /// # use heca_lib::HebrewDate;
-    /// # use std::num::NonZeroI8;
+    /// # use std::num::NonZeroU8;
     /// #
-    /// let result = HebrewDate::from_ymd(5779,HebrewMonth::Adar,NonZeroI8::new(1).unwrap());
+    /// let result = HebrewDate::from_ymd(5779,HebrewMonth::Adar,NonZeroU8::new(1).unwrap());
     /// assert!(!result.is_ok());
     /// assert_eq!(result.unwrap_err(),ConversionError::IsLeapYear);
     /// ```
@@ -135,9 +141,9 @@ pub enum ConversionError {
     /// ```
     /// # use heca_lib::prelude::*;
     /// # use heca_lib::HebrewDate;
-    /// # use std::num::NonZeroI8;
+    /// # use std::num::NonZeroU8;
     /// #
-    /// let result = HebrewDate::from_ymd(2448,HebrewMonth::Nissan,NonZeroI8::new(15).unwrap()); // What was the English day of the Exodus?
+    /// let result = HebrewDate::from_ymd(2448,HebrewMonth::Nissan,NonZeroU8::new(15).unwrap()); // What was the English day of the Exodus?
     /// assert!(!result.is_ok());
     /// assert_eq!(result.unwrap_err(),ConversionError::YearTooSmall);
     /// ```
@@ -154,21 +160,21 @@ impl fmt::Display for ConversionError {
                 "Can't convert an Adar 1 or Adar 2 of a year which isn't a leap year"
             ),
             ConversionError::TooManyDaysInMonth(d) => {
-                write!(f, "Too many days in month. Month only has {} days", d)
+                write!(f, "Too many days in this month. Month only has {} days", d)
             }
             ConversionError::IsLeapYear => write!(
                 f,
                 "Can't convert an Adar of a year which is a leap year. Specify Adar1 or Adar2"
             ),
-            //ConversionError::MonthDoesntExist => write!(f, "Month doesn't exist"),
             ConversionError::YearTooSmall => write!(
                 f,
                 "Cannot build calendar for years below 3764 (After Creation)"
             ),
+            ConversionError::TooManyDaysInWeek => write!(f, "Too many days in the week"),
+            ConversionError::TooManyHebrewMonths => write!(f, "Wrong Hebrew month number"),
         }
     }
 }
-
 /// What Torah Readings are we looking for
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, Eq, PartialEq)]
 pub enum TorahReadingType {
@@ -246,7 +252,7 @@ pub enum TorahReadingType {
 /// ~~~
 /// use heca_lib::HebrewYear;
 /// use heca_lib::prelude::*;
-/// let mut years: Vec<u64> = Vec::new();
+/// let mut years: Vec<i32> = Vec::new();
 /// for year in 5780..5880 {
 ///     let t = HebrewYear::new(year).unwrap().year_type();
 ///     match t {

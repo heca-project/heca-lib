@@ -1,18 +1,17 @@
 use std::convert::{TryFrom, TryInto};
 
-use crate::convert::year::backend::{CHALAKIM_BETWEEN_MOLAD, FIRST_MOLAD};
-use crate::convert::*;
-use crate::holidays::get_chol_list;
-use crate::holidays::get_shabbos_list;
-use crate::holidays::get_special_parsha_list;
-use crate::holidays::get_yt_list;
+use crate::holidays::{
+    chol::get_chol_list, shabbos::get_shabbos_list, special_parsha::get_special_parsha_list,
+    yom_tov::get_yt_list, Holiday,
+};
+use crate::internal::calendar::{CHALAKIM_BETWEEN_MOLAD, FIRST_MOLAD};
+use crate::prelude::*;
+use crate::HebrewDate;
 use chrono::{Datelike, Duration, NaiveDate, NaiveDateTime};
 use std::num::NonZeroU8;
 use tinyvec::TinyVec;
 
-pub(crate) mod backend;
-
-use crate::convert::year::backend::{
+use crate::internal::calendar::{
     get_rosh_hashana, months_per_year, return_year_sched, CHALAKIM_PER_HOUR, EPOCH, FIRST_YEAR,
     YEAR_SCHED,
 };
@@ -79,7 +78,6 @@ impl HebrewYear {
         self.months_per_year == 13
     }
 
-    #[inline]
     /// Returns the type of year.
     ///
     /// A Hebrew year can be one of 14 combinations of length and starting day.
@@ -87,6 +85,7 @@ impl HebrewYear {
     /// # Returns
     ///
     /// A [MonthSchedule](../heca_lib/prelude/enum.MonthSchedule.html)
+    #[inline]
     pub fn year_type(&self) -> MonthSchedule {
         if self.months_per_year == 12 {
             match self.day_of_rh {

@@ -1,12 +1,16 @@
-mod location;
+pub use crate::holidays::chol::Chol;
+pub use crate::holidays::shabbos::Parsha;
+pub use crate::holidays::special_parsha::SpecialParsha;
+pub use crate::holidays::yom_tov::YomTov;
+pub use crate::holidays::{Holiday, Name};
 #[doc(inline)]
-pub use location::*;
 use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
 use std::fmt;
 use std::num::NonZeroU8;
 
 #[derive(Debug, PartialEq, Eq, Ord, PartialOrd, Copy, Clone, Serialize, Deserialize)]
+
 pub enum Day {
     Sunday,
     Monday,
@@ -48,6 +52,13 @@ impl Molad {
         self.remainder
     }
 }
+
+#[derive(Eq, PartialEq, Clone, Copy, Serialize, Deserialize)]
+pub enum Location {
+    Israel,
+    Chul,
+}
+
 #[derive(Debug, PartialEq, Eq, Copy, Clone, Serialize, Deserialize, Ord, PartialOrd)]
 pub enum HebrewMonth {
     Tishrei,

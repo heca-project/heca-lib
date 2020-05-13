@@ -87,6 +87,7 @@
 
 mod convert;
 mod holidays;
+mod internal;
 pub mod prelude;
 #[doc(inline)]
 pub use convert::HebrewDate;

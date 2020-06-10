@@ -54,15 +54,6 @@ pub(crate) fn get<T: Clone>(
 
                 let month_after = get_month_after(year, hebrew_month);
                 let shabbos_mevarchim_day = year.and_month_day(hebrew_month, 29 - dow); //The last day of the month (that's not Rosh Chodesh) is always the 29th. Sometimes Rosh Chodesh is the 30th, sometimes there is no 30th.
-                eprintln!("\n");
-                dbg!(
-                    month_after,
-                    dow,
-                    shabbos_mevarchim_day.year(),
-                    shabbos_mevarchim_day.month(),
-                    shabbos_mevarchim_day.day(),
-                    shabbos_mevarchim_day.day_of_week()
-                );
                 Some(Holiday {
                     day: shabbos_mevarchim_day,
                     name: Name::ShabbosMevarchim {

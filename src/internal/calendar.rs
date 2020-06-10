@@ -1,9 +1,10 @@
-use crate::prelude::Day;
-use chrono::prelude::*;
+use crate::{prelude::Day, secular::Duration};
 use once_cell::sync::Lazy;
 use std::convert::TryFrom;
 /// The amount of Chalakim in an hour.
+pub(crate) const CHALAKIM_PER_MINUTE: u16 = 1080 / 60;
 pub(crate) const CHALAKIM_PER_HOUR: u16 = 1080;
+pub(crate) const CHALAKIM_PER_DAY: u16 = 1080 * 24;
 /// The amount of Chalakim between two Molads.
 // See https://www.chabad.org/library/article_cdo/aid/947923/jewish/Kiddush-HaChodesh-Chapter-Six.htm#bartnoteRef8a947923
 pub(crate) const CHALAKIM_BETWEEN_MOLAD: u32 =
@@ -19,16 +20,17 @@ const LEAP_YEARS: [bool; 19] = [
 // There are three starting dates. Right now, we don't work with negative Gregorian dates, so the
 // Epoch period is the first year of the first 19 year cycle after year 0.
 //
-// 1. Epoch - this is the first day, is on 6:00 PM Shabbos (Saturay) afternoon.
+// 1. Epoch - this is the first day, is on 6:00 PM Shabbos (Saturday) afternoon.
 // 2. FIRST_MOLAD - the amount of Chalakim from Epoch to the first Molad -(Tishrei 3673). It was on Monday, September 23rd at 12:16:6 Chalakim
 // 3. FIRST_YEAR: Self described - this is the first Hebrew calendar since the epoch.
 // 4. FIRST_RH: The first Rosh Hashana since the Epoch.
-pub(crate) const FIRST_MOLAD: u16 = 24 * 1080 + 18 * 1080 + (16 * 1080 / 60) + 6;
-pub(crate) const FIRST_YEAR: u16 = 3763;
-pub(crate) const FIRST_RH: Lazy<chrono::NaiveDateTime> =
-    Lazy::new(|| NaiveDate::from_ymd(2, 9, 23).and_hms(18, 0, 0));
-pub(crate) const EPOCH: Lazy<chrono::NaiveDateTime> =
-    Lazy::new(|| NaiveDate::from_ymd(2, 9, 21).and_hms(18, 0, 0));
+pub(crate) const FIRST_MOLAD: u16 = 31524;
+pub(crate) const FIRST_YEAR: u16 = 1;
+pub(crate) const FIRST_RH: Lazy<crate::secular::Date> =
+    Lazy::new(|| crate::secular::Date::from_ymd(-3760, 9, 7) + Duration::hours(18));
+pub(crate) const DAYS_BETWEEN_RH_AND_EPOCH: u8 = 2;
+pub(crate) const EPOCH: Lazy<crate::secular::Date> =
+    Lazy::new(|| crate::secular::Date::from_ymd(-3760, 9, 5) + Duration::hours(18));
 
 // Return the correct schedule for they year. There can be only six possible amount of days, so
 // short of a bug on my part, this should never panic.
@@ -57,11 +59,11 @@ pub(crate) const YEAR_SCHED: [[u8; 14]; 6] = [
 pub(crate) const AMNT_CHALAKIM_PER_CYCLE: u64 =
     (7 * 13 * CHALAKIM_BETWEEN_MOLAD as u32 + 12 * 12 * CHALAKIM_BETWEEN_MOLAD as u32) as u64;
 
-fn get_molad_for_year(year: i32) -> u64 {
-    let amnt_of_cycles: u16 = ((year - i32::from(FIRST_YEAR)) / 19) as u16;
+fn get_molad_for_year(year: u32) -> u64 {
+    let amnt_of_cycles: u16 = ((year - u32::from(FIRST_YEAR)) / 19) as u16;
 
     let mut amnt_chalakim: u64 = (AMNT_CHALAKIM_PER_CYCLE * amnt_of_cycles as u64) as u64;
-    let cur_year_in_cycle: u8 = ((year - FIRST_YEAR as i32) % 19) as u8;
+    let cur_year_in_cycle: u8 = ((year - FIRST_YEAR as u32) % 19) as u8;
     for i in 0..cur_year_in_cycle {
         amnt_chalakim +=
             if LEAP_YEARS[i as usize] { 13 } else { 12 } * CHALAKIM_BETWEEN_MOLAD as u64;
@@ -71,8 +73,8 @@ fn get_molad_for_year(year: i32) -> u64 {
 }
 
 //Does short calculation if this year is a leap year.
-pub(crate) fn months_per_year(year: i32) -> u8 {
-    let year_in_cycle: usize = ((year - FIRST_YEAR as i32) % 19) as usize;
+pub(crate) fn months_per_year(year: u32) -> u8 {
+    let year_in_cycle: usize = ((year - FIRST_YEAR as u32) % 19) as usize;
     if LEAP_YEARS[year_in_cycle] {
         13
     } else {
@@ -82,7 +84,7 @@ pub(crate) fn months_per_year(year: i32) -> u8 {
 
 //Calculate how many Chalakim between Epoch and Rosh Hashana, and which day of the week does it
 //fall out on.
-pub(crate) fn get_rosh_hashana(year: i32) -> (u32, Day, u64) {
+pub(crate) fn get_rosh_hashana(year: u32) -> (u32, Day, u64) {
     let amnt_chalakim_since_first_molad = get_molad_for_year(year);
     let amnt_chalakim_since_epoch = amnt_chalakim_since_first_molad + u64::from(FIRST_MOLAD);
 
@@ -98,9 +100,9 @@ pub(crate) fn get_rosh_hashana(year: i32) -> (u32, Day, u64) {
     //This shouldn't panic, as there are seven options in Day (seven days in week).
     let mut dow = Day::try_from(((amnt_days) % 7) as u8).unwrap();
     // Lo Adu Rosh
-
     if dow == Day::Sunday || dow == Day::Wednesday || dow == Day::Friday {
         amnt_days += 1;
+
         reg_postpone = true;
     }
 
@@ -129,7 +131,7 @@ pub(crate) fn get_rosh_hashana(year: i32) -> (u32, Day, u64) {
 }
 
 pub(crate) fn day_of_last_rh(days_since_first_rh: u32) -> u32 {
-    let mut cur_year = (FIRST_YEAR as i32) + (19 * days_since_first_rh / 6956) as i32;
+    let mut cur_year = (FIRST_YEAR as u32) + (19 * days_since_first_rh / 6956) as u32;
     debug_assert!(get_rosh_hashana(cur_year).0 <= days_since_first_rh);
     while get_rosh_hashana(cur_year + 1).0 <= days_since_first_rh {
         cur_year += 1;
@@ -138,9 +140,7 @@ pub(crate) fn day_of_last_rh(days_since_first_rh: u32) -> u32 {
 }
 #[cfg(test)]
 mod tests {
-    use crate::convert::HebrewDate;
-    use crate::prelude::*;
-    use chrono::Duration;
+    use crate::hebrew::Month;
     use std::convert::TryInto;
     use std::num::NonZeroU8;
 
@@ -160,10 +160,10 @@ mod tests {
         use rayon;
         use rayon::prelude::*;
 
-        (((FIRST_YEAR + 1) as i32)..297000)
+        (((FIRST_YEAR + 1) as u32)..297000)
             .into_par_iter()
-            .map(|i: i32| {
-                let amnt_days_between_rh_and_epoch = get_rosh_hashana(i as i32).0;
+            .map(|i: u32| {
+                let amnt_days_between_rh_and_epoch = get_rosh_hashana(i as u32).0;
                 let amnt_days_in_year = get_rosh_hashana(i + 1).0 - amnt_days_between_rh_and_epoch;
                 return_year_sched(amnt_days_in_year.try_into().unwrap());
             })
@@ -171,10 +171,10 @@ mod tests {
     }
     #[test]
     fn compare_hebrew_day_elul_sanity_check() {
-        let mut orig_date = NaiveDate::from_ymd(1901, 8, 15).and_hms(18, 0, 0);
+        use crate::hebrew::Date;
+        let mut orig_date = crate::secular::Date::from_ymd(1901, 8, 15).and_hms(18, 0, 0);
         for j in 1..=29 {
-            let heb_day =
-                HebrewDate::from_ymd(5661, HebrewMonth::Elul, NonZeroU8::new(j).unwrap()).unwrap();
+            let heb_day = Date::from_ymd(5661, Month::Elul, j);
             let back = heb_day.to_gregorian();
             println!("{}", j);
             assert_eq!(orig_date, back);
@@ -184,11 +184,10 @@ mod tests {
 
     #[test]
     fn compare_hebrew_day_tishrei_sanity_check() {
-        let mut orig_date = NaiveDate::from_ymd(1900, 9, 23).and_hms(18, 0, 0);
+        use crate::hebrew::Date;
+        let mut orig_date = crate::secular::Date::from_ymd(1900, 9, 23).and_hms(18, 0, 0);
         for j in 1..=30 {
-            let heb_day =
-                HebrewDate::from_ymd(5661, HebrewMonth::Tishrei, NonZeroU8::new(j).unwrap())
-                    .unwrap();
+            let heb_day = Date::from_ymd(5661, Month::Tishrei, j);
             let back = heb_day.to_gregorian();
             println!("{}", j);
             assert_eq!(orig_date, back);
@@ -197,10 +196,10 @@ mod tests {
     }
     #[test]
     fn compare_hebrew_day_adar1_sanity_check() {
-        let mut orig_date = NaiveDate::from_ymd(1900, 1, 30).and_hms(18, 0, 0);
+        use crate::hebrew::Date;
+        let mut orig_date = crate::secular::Date::from_ymd(1900, 1, 30).and_hms(18, 0, 0);
         for j in 1..=30 {
-            let heb_day =
-                HebrewDate::from_ymd(5660, HebrewMonth::Adar1, NonZeroU8::new(j).unwrap()).unwrap();
+            let heb_day = Date::from_ymd(5660, Month::Adar1, j);
             let back = heb_day.to_gregorian();
             println!("{}", j);
             assert_eq!(orig_date, back);
@@ -210,35 +209,43 @@ mod tests {
 
     #[test]
     fn test_rh_against_working_list() {
-        test_against_working_list("RoshHashanaList", 1, HebrewMonth::Tishrei);
+        test_against_working_list("RoshHashanaList", 1, Month::Tishrei);
     }
     #[test]
     fn test_adar1_against_working_list() {
-        test_against_working_list("Adar1List", 1, HebrewMonth::Adar1);
+        test_against_working_list("Adar1List", 1, Month::Adar1);
     }
 
-    fn test_against_working_list(filename: &str, day: u8, month: HebrewMonth) {
+    fn test_against_working_list(filename: &str, day: u8, month: Month) {
+        use crate::hebrew::Date;
         let file_contents = std::fs::read_to_string(format!("./testing/{}", filename)).unwrap();
+        let mut error = false;
         file_contents
             .split("\n")
             .filter(|x| *x != "")
             .for_each(|x| {
                 let res = x.split(" ").collect::<Vec<&str>>();
                 if res.len() != 1 {
-                    let eng_day = HebrewDate::from_ymd(
-                        res[0].parse::<i32>().unwrap(),
-                        month,
-                        NonZeroU8::new(day as u8).unwrap(),
-                    )
-                    .unwrap()
-                    .to_gregorian()
+                    let eng_day = Date::from_ymd(res[0].parse::<u32>().unwrap(), month, day as u8)
+                        .to_gregorian()
                         + Duration::days(1);
-                    println!("{:?}", eng_day);
                     let sp = res[1].split("/").collect::<Vec<&str>>();
                     let (month, day, year) = (sp[0], sp[1], sp[2]);
-                    assert_eq!(month.parse::<u64>().unwrap() as u32, eng_day.month());
-                    assert_eq!(day.parse::<u64>().unwrap() as u32, eng_day.day());
-                    assert_eq!(year.parse::<u64>().unwrap() as i32, eng_day.year());
+                    if month.parse::<u64>().unwrap() as u8 != eng_day.month() {
+                        eprintln!("{}-{}-{}, {:?}", year, month, day, eng_day);
+                        error = true;
+                    }
+                    if day.parse::<u64>().unwrap() as u8 != eng_day.day() {
+                        eprintln!("{}-{}-{}, {:?}", year, month, day, eng_day);
+                        error = true;
+                    }
+                    if year.parse::<u64>().unwrap() as i32 != eng_day.year() {
+                        eprintln!("{}-{}-{}, {:?}", year, month, day, eng_day);
+                        error = true
+                    }
+                }
+                if error {
+                    panic!("Error");
                 }
             });
     }

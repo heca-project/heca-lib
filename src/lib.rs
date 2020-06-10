@@ -74,8 +74,8 @@
 //!use heca_lib::{HebrewYear,HebrewDate};
 //!use heca_lib::prelude::*;
 //!
-//!assert_eq!(HebrewYear::new(5779)?.get_holidays_vec(Location::Chul, &[TorahReadingType::Shabbos])[0].name(), Name::Shabbos(Parsha::Vayelech));
-//!assert_eq!(HebrewYear::new(5779)?.get_holidays_vec(Location::Chul, &[TorahReadingType::SpecialParsha]).iter().find(|x| x.name() == Name::SpecialParsha(SpecialParsha::Zachor)).unwrap().day(),HebrewDate::from_ymd(5779,HebrewMonth::Adar2,NonZeroU8::new(9).unwrap())?);
+//!assert_eq!(HebrewYear::new(5779)?.get_holidays_vec(Location::Chul, &[HolidayType::Shabbos], &None::<fn(&HebrewDate)>)[0].name(), Name::Shabbos(Parsha::Vayelech));
+//!assert_eq!(HebrewYear::new(5779)?.get_holidays_vec(Location::Chul, &[HolidayType::SpecialParsha], &None::<fn(&HebrewDate)> ).iter().find(|x| x.name() == Name::SpecialParsha(SpecialParsha::Zachor)).unwrap().day(),HebrewDate::from_ymd(5779,HebrewMonth::Adar2,NonZeroU8::new(9).unwrap())?);
 //!# Ok::<(),ConversionError>(())
 //!
 //!```
@@ -85,11 +85,8 @@
 //!
 //!This library won't work for years before 3764 (4).
 
-mod convert;
-mod holidays;
+pub mod hebrew;
+pub mod holidays;
 mod internal;
 pub mod prelude;
-#[doc(inline)]
-pub use convert::HebrewDate;
-#[doc(inline)]
-pub use convert::HebrewYear;
+pub mod secular;

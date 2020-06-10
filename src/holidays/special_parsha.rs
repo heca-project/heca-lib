@@ -1,16 +1,14 @@
-use serde::{Deserialize, Serialize};
-
 use super::{Holiday, Name};
 use crate::{
-    prelude::{Day, HebrewMonth},
-    HebrewYear,
+    hebrew::{Month, Year},
+    prelude::Day,
 };
 use std::num::NonZeroU8;
 use tinyvec::TinyVec;
 
-pub(crate) fn get_special_parsha_list(
-    year: &HebrewYear,
-    array_vec: &mut TinyVec<impl tinyvec::Array<Item = Option<Holiday>>>,
+pub(crate) fn get<T: Clone>(
+    year: &Year,
+    array_vec: &mut TinyVec<impl tinyvec::Array<Item = Option<Holiday<T>>>>,
 ) {
     let rh_dow_next = year.day_of_next_rh;
     let len_of_year = year.year_len;
@@ -25,41 +23,38 @@ pub(crate) fn get_special_parsha_list(
         day: if rh_dow_next == Day::Tuesday {
             if len_of_year < 360 {
                 // This is a regular year
-                year.get_hebrew_date(HebrewMonth::Adar, NonZeroU8::new(1).unwrap())
-                    .unwrap()
+                year.and_month_day(Month::Adar, 1)
             } else {
                 // This is a leap year
-                year.get_hebrew_date(HebrewMonth::Adar2, NonZeroU8::new(1).unwrap())
-                    .unwrap()
+                year.and_month_day(Month::Adar2, 1)
             }
         } else {
             let month = if len_of_year < 360 {
-                HebrewMonth::Shvat
+                Month::Shvat
             } else {
-                HebrewMonth::Adar1
+                Month::Adar1
             };
             // This is a regular year
-            year.get_hebrew_date(
+            year.and_month_day(
                 month,
-                NonZeroU8::new(match rh_dow_next {
+                match rh_dow_next {
                     Day::Monday => 25,
                     Day::Thursday => 29,
                     Day::Shabbos => 27,
                     _ => panic!(format!("Day is on {:?}, violating ADU rosh", rh_dow_next)),
-                })
-                .unwrap(),
+                },
             )
-            .unwrap()
         },
         name: Name::SpecialParsha(SpecialParsha::Shekalim),
+        candle_lighting: None,
     };
     let zachor = Holiday {
         //Parshas Zachor is read on the Shabbos before Purim.
         day: {
             let month = if len_of_year < 360 {
-                HebrewMonth::Adar
+                Month::Adar
             } else {
-                HebrewMonth::Adar2
+                Month::Adar2
             };
             let day = match rh_dow_next {
                 Day::Monday => 9,    //For example, 5782
@@ -68,18 +63,18 @@ pub(crate) fn get_special_parsha_list(
                 Day::Shabbos => 11,  //For example, 5780
                 _ => panic!(format!("Day is on {:?}, violating ADU rosh", rh_dow_next)),
             };
-            year.get_hebrew_date(month, NonZeroU8::new(day).unwrap())
-                .unwrap()
+            year.and_month_day(month, day)
         },
         name: Name::SpecialParsha(SpecialParsha::Zachor),
+        candle_lighting: None,
     };
     let parah = Holiday {
         //Parshas Parah is read on the Shabbos before Hachodesh.
         day: {
             let month = if len_of_year < 360 {
-                HebrewMonth::Adar
+                Month::Adar
             } else {
-                HebrewMonth::Adar2
+                Month::Adar2
             };
             let day = match rh_dow_next {
                 Day::Monday => 23,   //For example, 5782
@@ -88,10 +83,10 @@ pub(crate) fn get_special_parsha_list(
                 Day::Shabbos => 18,  //For example, 5780
                 _ => panic!(format!("Day is on {:?}, violating ADU rosh", rh_dow_next)),
             };
-            year.get_hebrew_date(month, NonZeroU8::new(day).unwrap())
-                .unwrap()
+            year.and_month_day(month, day)
         },
         name: Name::SpecialParsha(SpecialParsha::Parah),
+        candle_lighting: None,
     };
     let hachodesh = Holiday {
         //Parshas Hachodesh is read on the Shabbos before Rosh Chodesh Nissan, or on Rosh Chodesh
@@ -99,13 +94,12 @@ pub(crate) fn get_special_parsha_list(
         day: {
             if rh_dow_next == Day::Monday {
                 //Hachodesh is read on Rosh Chodesh Nissan itself
-                year.get_hebrew_date(HebrewMonth::Nissan, NonZeroU8::new(1).unwrap())
-                    .unwrap()
+                year.and_month_day(Month::Nissan, 1)
             } else {
                 let month = if len_of_year < 360 {
-                    HebrewMonth::Adar
+                    Month::Adar
                 } else {
-                    HebrewMonth::Adar2
+                    Month::Adar2
                 };
                 let day = match rh_dow_next {
                     Day::Tuesday => 29,  //For example, 5781
@@ -113,16 +107,16 @@ pub(crate) fn get_special_parsha_list(
                     Day::Shabbos => 25,  //For example, 5780
                     _ => panic!(format!("Day is on {:?}, violating ADU rosh", rh_dow_next)),
                 };
-                year.get_hebrew_date(month, NonZeroU8::new(day).unwrap())
-                    .unwrap()
+                year.and_month_day(month, day)
             }
         },
         name: Name::SpecialParsha(SpecialParsha::HaChodesh),
+        candle_lighting: None,
     };
 
     array_vec.extend_from_slice(&[Some(shekalim), Some(zachor), Some(parah), Some(hachodesh)]);
 }
-#[derive(Eq, PartialEq, Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Eq, PartialEq, Debug, Clone, Copy)]
 pub enum SpecialParsha {
     Shekalim,
     Zachor,

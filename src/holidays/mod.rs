@@ -1,27 +1,33 @@
 use crate::prelude::*;
 pub(crate) mod chol;
+pub(crate) mod minor_holiday;
+pub(crate) mod omer;
 pub(crate) mod shabbos;
+pub(crate) mod shabbos_mevarchim;
 pub(crate) mod special_parsha;
 pub(crate) mod yom_tov;
-use serde::*;
 
 use std::cmp::Ordering;
 
-use crate::convert::HebrewDate;
+use crate::hebrew::Date;
+use crate::hebrew::Month;
+use minor_holiday::MinorHoliday;
+use omer::Omer;
 use shabbos::Parsha;
 
-#[derive(Debug, Eq, Copy, Clone, Serialize)]
+#[derive(Debug, Copy, Clone)]
 /// This struct holds a day on which the Torah is read.
 ///
 /// You can get the Hebrew Date and the Torah reading.
-pub struct Holiday {
-    pub(crate) day: HebrewDate,
+pub struct Holiday<T: Clone> {
+    pub(crate) day: Date,
     pub(crate) name: Name,
+    pub(crate) candle_lighting: Option<T>,
 }
 
-impl Holiday {
+impl<T: Clone> Holiday<T> {
     #[inline]
-    pub fn day(&self) -> HebrewDate {
+    pub fn day(&self) -> Date {
         self.day
     }
 
@@ -31,34 +37,39 @@ impl Holiday {
     }
 }
 
-impl PartialOrd for Holiday {
+impl<T: Clone> PartialOrd for Holiday<T> {
     #[inline]
-    fn partial_cmp(&self, other: &Holiday) -> Option<Ordering> {
+    fn partial_cmp(&self, other: &Holiday<T>) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
 
-impl Ord for Holiday {
+impl<T: Clone> Ord for Holiday<T> {
     #[inline]
-    fn cmp(&self, other: &Holiday) -> Ordering {
+    fn cmp(&self, other: &Holiday<T>) -> Ordering {
         self.day.cmp(&other.day)
     }
 }
 
-impl PartialEq for Holiday {
+impl<T: Clone> Eq for Holiday<T> {}
+
+impl<T: Clone> PartialEq for Holiday<T> {
     #[inline]
-    fn eq(&self, other: &Holiday) -> bool {
+    fn eq(&self, other: &Holiday<T>) -> bool {
         self.day == other.day
     }
 }
 
-#[derive(Eq, PartialEq, Debug, Copy, Clone, Serialize, Deserialize)]
+#[derive(Eq, PartialEq, Debug, Copy, Clone)]
 #[non_exhaustive]
 pub enum Name {
     YomTov(YomTov),
     Chol(Chol),
     Shabbos(Parsha),
     SpecialParsha(SpecialParsha),
+    Omer(Omer),
+    MinorHoliday(MinorHoliday),
+    ShabbosMevarchim { hebrew_month: Month, molad: Molad },
 }
 
 /// Special Parshas read every winter
@@ -66,21 +77,21 @@ pub enum Name {
 #[cfg(test)]
 
 mod test {
-    use crate::{holidays::*, HebrewYear};
-    use chol::get_chol_list;
-    use chrono::prelude::*;
-    use shabbos::{get_shabbos_list, get_shabbosim};
+    use crate::{
+        hebrew::{Month, Year},
+        holidays::*,
+    };
     use std::num::NonZeroU8;
-    use yom_tov::get_yt_list;
 
     #[test]
     fn purim_should_never_start_on_a_friday_night() {
+        use crate::prelude::Day;
         for i in 3764..9999 {
-            let mut sum_vec = tinyvec::TinyVec::<[Option<Holiday>; 32]>::new();
-            get_chol_list(&HebrewYear::new(i).unwrap(), &mut sum_vec);
+            let mut sum_vec = tinyvec::TinyVec::<[Option<Holiday<bool>>; 32]>::new();
+            chol::get(&Year::new(i).unwrap(), &mut sum_vec);
             for day in sum_vec.iter() {
                 if day.unwrap().name() == Name::Chol(Chol::Purim) {
-                    assert_ne!(day.unwrap().day().to_gregorian().weekday(), Weekday::Fri);
+                    assert_ne!(day.unwrap().day().to_gregorian().weekday(), Day::Friday);
                 }
             }
         }
@@ -88,8 +99,8 @@ mod test {
     #[test]
     fn fasts_should_never_start_on_friday_night() {
         for i in 3764..9999 {
-            let mut sum_vec = tinyvec::TinyVec::<[Option<Holiday>; 32]>::new();
-            get_chol_list(&HebrewYear::new(i).unwrap(), &mut sum_vec);
+            let mut sum_vec = tinyvec::TinyVec::<[Option<Holiday<bool>>; 32]>::new();
+            chol::get(&Year::new(i).unwrap(), &mut sum_vec);
             for day in sum_vec.iter() {
                 if day.unwrap().name() == Name::Chol(Chol::TzomGedalia)
                     || day.unwrap().name() == Name::Chol(Chol::TenTeves)
@@ -102,34 +113,37 @@ mod test {
                         day.unwrap().day(),
                         day.unwrap().day().to_gregorian().weekday()
                     );
-                    assert_ne!(day.unwrap().day().to_gregorian().weekday(), Weekday::Fri);
+                    assert_ne!(day.unwrap().day().to_gregorian().weekday(), Day::Friday);
                 }
                 //Taanis Esther can never be on a Friday night or on a Thursday night
                 if day.unwrap().name() == Name::Chol(Chol::TaanisEsther) {
-                    assert_ne!(day.unwrap().day().to_gregorian().weekday(), Weekday::Fri);
-                    assert_ne!(day.unwrap().day().to_gregorian().weekday(), Weekday::Thu);
+                    assert_ne!(day.unwrap().day().to_gregorian().weekday(), Day::Friday);
+                    assert_ne!(day.unwrap().day().to_gregorian().weekday(), Day::Thursday);
                 }
             }
         }
     }
     #[test]
     fn check_shekalim_on_shabbos_mevorchim_or_rosh_chodesh() {
-        use chrono::Duration;
         for loc in [Location::Chul, Location::Israel].iter() {
             for i in 5764..9999 {
-                let y = HebrewYear::new(i).unwrap();
-                let date = if let Ok(date) =
-                    HebrewDate::from_ymd(i, HebrewMonth::Adar, NonZeroU8::new(1).unwrap())
-                {
+                let y = Year::new(i).unwrap();
+                let date = if let Ok(date) = Date::from_ymd_internal(Month::Adar, 1, y) {
                     date
                 } else {
-                    HebrewDate::from_ymd(i, HebrewMonth::Adar2, NonZeroU8::new(1).unwrap()).unwrap()
+                    Date::from_ymd(i, Month::Adar2, 1)
                 }
                 .to_gregorian();
-                let mut ignore_vec = tinyvec::TinyVec::<[Option<Holiday>; 32]>::new();
-                get_yt_list(&y, *loc, &mut ignore_vec);
-                let mut sum_vec = tinyvec::TinyVec::<[Option<Holiday>; 32]>::new();
-                get_shabbos_list(&y, *loc, &ignore_vec, &mut sum_vec);
+                let mut ignore_vec = tinyvec::TinyVec::<[Option<Holiday<bool>>; 32]>::new();
+                yom_tov::get(&y, *loc, &mut ignore_vec, &None::<fn(&Date) -> bool>);
+                let mut sum_vec = tinyvec::TinyVec::<[Option<Holiday<bool>>; 32]>::new();
+                shabbos::get(
+                    &y,
+                    *loc,
+                    &ignore_vec,
+                    &mut sum_vec,
+                    &None::<fn(&Date) -> bool>,
+                );
                 assert_eq!(
                     sum_vec
                         .iter()
@@ -145,17 +159,20 @@ mod test {
     }
     #[test]
     fn check_hachodesh_on_shabbos_mevorchim_or_rosh_chodesh() {
-        use chrono::Duration;
         for loc in [Location::Chul, Location::Israel].iter() {
             for i in 5764..9999 {
-                let date = HebrewDate::from_ymd(i, HebrewMonth::Nissan, NonZeroU8::new(1).unwrap())
-                    .unwrap()
-                    .to_gregorian();
-                let mut sum_vec = tinyvec::TinyVec::<[Option<Holiday>; 32]>::new();
-                let mut ignore_vec = tinyvec::TinyVec::<[Option<Holiday>; 32]>::new();
-                let y = HebrewYear::new(i).unwrap();
-                get_yt_list(&y, *loc, &mut ignore_vec);
-                get_shabbos_list(&y, *loc, &ignore_vec, &mut sum_vec);
+                let date = Date::from_ymd(i, Month::Nissan, 1).to_gregorian();
+                let mut sum_vec = tinyvec::TinyVec::<[Option<Holiday<bool>>; 32]>::new();
+                let mut ignore_vec = tinyvec::TinyVec::<[Option<Holiday<bool>>; 32]>::new();
+                let y = Year::new(i).unwrap();
+                yom_tov::get(&y, *loc, &mut ignore_vec, &None::<fn(&Date) -> bool>);
+                shabbos::get(
+                    &y,
+                    *loc,
+                    &ignore_vec,
+                    &mut sum_vec,
+                    &None::<fn(&Date) -> bool>,
+                );
 
                 assert_eq!(
                     sum_vec
@@ -173,23 +190,27 @@ mod test {
 
     #[test]
     fn check_zachor_on_shabbos_before_purim() {
-        use chrono::Duration;
         for loc in [Location::Chul, Location::Israel].iter() {
             for i in 5764..9999 {
                 let date = if let Ok(date) =
-                    HebrewDate::from_ymd(i, HebrewMonth::Adar, NonZeroU8::new(14).unwrap())
+                    Date::from_ymd_internal(Month::Adar, 14, Year::new(i).unwrap())
                 {
                     date
                 } else {
-                    HebrewDate::from_ymd(i, HebrewMonth::Adar2, NonZeroU8::new(14).unwrap())
-                        .unwrap()
+                    Date::from_ymd(i, Month::Adar2, 14)
                 }
                 .to_gregorian();
-                let mut sum_vec = tinyvec::TinyVec::<[Option<Holiday>; 32]>::new();
-                let mut ignore_vec = tinyvec::TinyVec::<[Option<Holiday>; 32]>::new();
-                let y = HebrewYear::new(i).unwrap();
-                get_yt_list(&y, *loc, &mut ignore_vec);
-                get_shabbos_list(&y, *loc, &mut ignore_vec, &mut sum_vec);
+                let mut sum_vec = tinyvec::TinyVec::<[Option<Holiday<bool>>; 32]>::new();
+                let mut ignore_vec = tinyvec::TinyVec::<[Option<Holiday<bool>>; 32]>::new();
+                let y = Year::new(i).unwrap();
+                yom_tov::get(&y, *loc, &mut ignore_vec, &None::<fn(&Date) -> bool>);
+                shabbos::get(
+                    &y,
+                    *loc,
+                    &mut ignore_vec,
+                    &mut sum_vec,
+                    &None::<fn(&Date) -> bool>,
+                );
                 assert_eq!(
                     sum_vec
                         .iter()
@@ -204,29 +225,51 @@ mod test {
     #[test]
     fn check_all_shabbosim_and_torah_readings_are_on_shabbos() {
         for i in 5764..9999 {
-            let mut sum_vec = tinyvec::TinyVec::<[Option<Holiday>; 32]>::new();
-            let mut ignore_vec = tinyvec::TinyVec::<[Option<Holiday>; 32]>::new();
-            let y = HebrewYear::new(i).unwrap();
-            get_yt_list(&y, Location::Chul, &mut ignore_vec);
-            get_shabbos_list(&y, Location::Chul, &mut ignore_vec, &mut sum_vec);
+            let mut sum_vec = tinyvec::TinyVec::<[Option<Holiday<bool>>; 32]>::new();
+            let mut ignore_vec = tinyvec::TinyVec::<[Option<Holiday<bool>>; 32]>::new();
+            let y = Year::new(i).unwrap();
+            yom_tov::get(
+                &y,
+                Location::Chul,
+                &mut ignore_vec,
+                &None::<fn(&Date) -> bool>,
+            );
+            shabbos::get(
+                &y,
+                Location::Chul,
+                &mut ignore_vec,
+                &mut sum_vec,
+                &None::<fn(&Date) -> bool>,
+            );
 
             assert_eq!(
                 sum_vec
                     .iter()
-                    .filter(|&x| (*x).unwrap().day().to_gregorian().weekday() != Weekday::Fri)
+                    .filter(|&x| (*x).unwrap().day().to_gregorian().weekday() != Day::Friday)
                     .count(),
                 0
             );
-            let mut sum_vec = tinyvec::TinyVec::<[Option<Holiday>; 32]>::new();
-            let mut ignore_vec = tinyvec::TinyVec::<[Option<Holiday>; 32]>::new();
-            let y = HebrewYear::new(i).unwrap();
-            get_yt_list(&y, Location::Chul, &mut ignore_vec);
-            get_shabbos_list(&y, Location::Chul, &ignore_vec, &mut sum_vec);
+            let mut sum_vec = tinyvec::TinyVec::<[Option<Holiday<bool>>; 32]>::new();
+            let mut ignore_vec = tinyvec::TinyVec::<[Option<Holiday<bool>>; 32]>::new();
+            let y = Year::new(i).unwrap();
+            yom_tov::get(
+                &y,
+                Location::Chul,
+                &mut ignore_vec,
+                &None::<fn(&Date) -> bool>,
+            );
+            shabbos::get(
+                &y,
+                Location::Chul,
+                &ignore_vec,
+                &mut sum_vec,
+                &None::<fn(&Date) -> bool>,
+            );
 
             assert_eq!(
                 sum_vec
                     .iter()
-                    .filter(|&x| (*x).unwrap().day().to_gregorian().weekday() != Weekday::Fri)
+                    .filter(|&x| (*x).unwrap().day().to_gregorian().weekday() != Day::Friday)
                     .count(),
                 0
             );
@@ -238,15 +281,25 @@ mod test {
         for i in 5764..9999 {
             println!("{}", i);
             println!("Getting chul yt list");
-            let mut sum_vec = tinyvec::TinyVec::<[Option<Holiday>; 32]>::new();
+            let mut sum_vec = tinyvec::TinyVec::<[Option<Holiday<bool>>; 32]>::new();
 
-            get_yt_list(&HebrewYear::new(i).unwrap(), Location::Chul, &mut sum_vec);
+            yom_tov::get(
+                &Year::new(i).unwrap(),
+                Location::Chul,
+                &mut sum_vec,
+                &None::<fn(&Date) -> bool>,
+            );
             sum_vec.clear();
             println!("Getting eretz yt list");
-            get_yt_list(&HebrewYear::new(i).unwrap(), Location::Israel, &mut sum_vec);
+            yom_tov::get(
+                &Year::new(i).unwrap(),
+                Location::Israel,
+                &mut sum_vec,
+                &None::<fn(&Date) -> bool>,
+            );
             sum_vec.clear();
             println!("Getting chol list");
-            get_chol_list(&HebrewYear::new(i).unwrap(), &mut sum_vec);
+            chol::get(&Year::new(i).unwrap(), &mut sum_vec);
         }
     }
 
@@ -256,33 +309,27 @@ mod test {
         for i in 200_000..210_000 {
             println!("{}", i);
             println!("Getting chul yt list");
-            let mut sum_vec = tinyvec::TinyVec::<[Option<Holiday>; 32]>::new();
+            let mut sum_vec = tinyvec::TinyVec::<[Option<Holiday<bool>>; 32]>::new();
 
-            get_yt_list(&HebrewYear::new(i).unwrap(), Location::Chul, &mut sum_vec);
+            yom_tov::get(
+                &Year::new(i).unwrap(),
+                Location::Chul,
+                &mut sum_vec,
+                &None::<fn(&Date) -> bool>,
+            );
             sum_vec.clear();
             println!("Getting eretz yt list");
-            get_yt_list(&HebrewYear::new(i).unwrap(), Location::Israel, &mut sum_vec);
+            yom_tov::get(
+                &Year::new(i).unwrap(),
+                Location::Israel,
+                &mut sum_vec,
+                &None::<fn(&Date) -> bool>,
+            );
             sum_vec.clear();
             println!("Getting chol list");
-            get_chol_list(&HebrewYear::new(i).unwrap(), &mut sum_vec);
-            let _english: NaiveDateTime =
-                HebrewDate::from_ymd(i, HebrewMonth::Elul, std::num::NonZeroU8::new(29).unwrap())
-                    .unwrap()
-                    .try_into()
-                    .unwrap();
-        }
-    }
-
-    #[test]
-    fn get_shabbosim_fall_on_shabbos() {
-        for i in 3764..9999 {
-            get_shabbosim(
-                &HebrewYear::new(i).unwrap(),
-                &tinyvec::TinyVec::<[Option<Holiday>; 32]>::new(),
-            )
-            .iter()
-            //Shabbos starts on _Friday_ night
-            .for_each(|x| assert_eq!(x.to_gregorian().weekday(), Weekday::Fri));
+            chol::get(&Year::new(i).unwrap(), &mut sum_vec);
+            let _english: crate::secular::Date =
+                Date::from_ymd(i, Month::Elul, 29).try_into().unwrap();
         }
     }
 }

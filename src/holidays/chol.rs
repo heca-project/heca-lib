@@ -1,210 +1,178 @@
-use serde::{Deserialize, Serialize};
-
 use super::{Holiday, Name};
 use crate::{
-    prelude::{Day, HebrewMonth},
-    HebrewYear,
+    hebrew::{Month, Year},
+    prelude::Day,
 };
 use std::num::NonZeroU8;
 use tinyvec::TinyVec;
 
-pub(crate) fn get_chol_list(
-    year: &HebrewYear,
-    return_vec: &mut TinyVec<impl tinyvec::Array<Item = Option<Holiday>>>,
+pub(crate) fn get<S: Clone>(
+    year: &Year,
+    return_vec: &mut TinyVec<impl tinyvec::Array<Item = Option<Holiday<S>>>>,
 ) {
     return_vec.extend_from_slice(&[
         Some(Holiday {
-            day: year
-                .get_hebrew_date(HebrewMonth::Tishrei, NonZeroU8::new(30).unwrap())
-                .unwrap(),
+            day: year.and_month_day(Month::Tishrei, 30),
             name: Name::Chol(Chol::RoshChodeshCheshvan1),
+            candle_lighting: None,
         }),
         Some(Holiday {
-            day: year
-                .get_hebrew_date(HebrewMonth::Cheshvan, NonZeroU8::new(1).unwrap())
-                .unwrap(),
+            day: year.and_month_day(Month::Cheshvan, 1),
             name: Name::Chol(Chol::RoshChodeshCheshvan2),
+            candle_lighting: None,
         }),
         Some(Holiday {
-            day: year
-                .get_hebrew_date(HebrewMonth::Kislev, NonZeroU8::new(25).unwrap())
-                .unwrap(),
+            day: year.and_month_day(Month::Kislev, 25),
             name: Name::Chol(Chol::Chanukah1),
+            candle_lighting: None,
         }),
         Some(Holiday {
-            day: year
-                .get_hebrew_date(HebrewMonth::Kislev, NonZeroU8::new(26).unwrap())
-                .unwrap(),
+            day: year.and_month_day(Month::Kislev, 26),
             name: Name::Chol(Chol::Chanukah2),
+            candle_lighting: None,
         }),
         Some(Holiday {
-            day: year
-                .get_hebrew_date(HebrewMonth::Kislev, NonZeroU8::new(27).unwrap())
-                .unwrap(),
+            day: year.and_month_day(Month::Kislev, 27),
             name: Name::Chol(Chol::Chanukah3),
+            candle_lighting: None,
         }),
         Some(Holiday {
-            day: year
-                .get_hebrew_date(HebrewMonth::Kislev, NonZeroU8::new(28).unwrap())
-                .unwrap(),
+            day: year.and_month_day(Month::Kislev, 28),
             name: Name::Chol(Chol::Chanukah4),
+            candle_lighting: None,
         }),
         Some(Holiday {
-            day: year
-                .get_hebrew_date(HebrewMonth::Kislev, NonZeroU8::new(29).unwrap())
-                .unwrap(),
+            day: year.and_month_day(Month::Kislev, 29),
             name: Name::Chol(Chol::Chanukah5),
+            candle_lighting: None,
         }),
         Some(Holiday {
-            day: year
-                .get_hebrew_date(HebrewMonth::Shvat, NonZeroU8::new(1).unwrap())
-                .unwrap(),
+            day: year.and_month_day(Month::Shvat, 1),
             name: Name::Chol(Chol::RoshChodeshShvat),
+            candle_lighting: None,
         }),
         Some(Holiday {
-            day: year
-                .get_hebrew_date(HebrewMonth::Teves, NonZeroU8::new(10).unwrap())
-                .unwrap(),
+            day: year.and_month_day(Month::Teves, 10),
             name: Name::Chol(Chol::TenTeves),
+            candle_lighting: None,
         }),
         Some(Holiday {
-            day: year
-                .get_hebrew_date(HebrewMonth::Nissan, NonZeroU8::new(1).unwrap())
-                .unwrap(),
+            day: year.and_month_day(Month::Nissan, 1),
             name: Name::Chol(Chol::RoshChodeshNissan),
+            candle_lighting: None,
         }),
         Some(Holiday {
-            day: year
-                .get_hebrew_date(HebrewMonth::Nissan, NonZeroU8::new(30).unwrap())
-                .unwrap(),
+            day: year.and_month_day(Month::Nissan, 30),
             name: Name::Chol(Chol::RoshChodeshIyar1),
+            candle_lighting: None,
         }),
         Some(Holiday {
-            day: year
-                .get_hebrew_date(HebrewMonth::Iyar, NonZeroU8::new(1).unwrap())
-                .unwrap(),
+            day: year.and_month_day(Month::Iyar, 1),
             name: Name::Chol(Chol::RoshChodeshIyar2),
+            candle_lighting: None,
         }),
         Some(Holiday {
-            day: year
-                .get_hebrew_date(HebrewMonth::Sivan, NonZeroU8::new(1).unwrap())
-                .unwrap(),
+            day: year.and_month_day(Month::Sivan, 1),
             name: Name::Chol(Chol::RoshChodeshSivan),
+            candle_lighting: None,
         }),
         Some(Holiday {
-            day: year
-                .get_hebrew_date(HebrewMonth::Sivan, NonZeroU8::new(30).unwrap())
-                .unwrap(),
+            day: year.and_month_day(Month::Sivan, 30),
             name: Name::Chol(Chol::RoshChodeshTammuz1),
+            candle_lighting: None,
         }),
         Some(Holiday {
-            day: year
-                .get_hebrew_date(HebrewMonth::Tammuz, NonZeroU8::new(1).unwrap())
-                .unwrap(),
+            day: year.and_month_day(Month::Tammuz, 1),
             name: Name::Chol(Chol::RoshChodeshTammuz2),
+            candle_lighting: None,
         }),
         Some(Holiday {
-            day: year
-                .get_hebrew_date(HebrewMonth::Av, NonZeroU8::new(1).unwrap())
-                .unwrap(),
+            day: year.and_month_day(Month::Av, 1),
             name: Name::Chol(Chol::RoshChodeshAv),
+            candle_lighting: None,
         }),
         Some(Holiday {
-            day: year
-                .get_hebrew_date(HebrewMonth::Av, NonZeroU8::new(30).unwrap())
-                .unwrap(),
+            day: year.and_month_day(Month::Av, 30),
             name: Name::Chol(Chol::RoshChodeshElul1),
+            candle_lighting: None,
         }),
         Some(Holiday {
-            day: year
-                .get_hebrew_date(HebrewMonth::Elul, NonZeroU8::new(1).unwrap())
-                .unwrap(),
+            day: year.and_month_day(Month::Elul, 1),
             name: Name::Chol(Chol::RoshChodeshElul2),
+            candle_lighting: None,
         }),
     ]);
 
     if year.sched[1] == 30 {
         return_vec.extend_from_slice(&[
             Some(Holiday {
-                day: year
-                    .get_hebrew_date(HebrewMonth::Cheshvan, NonZeroU8::new(30).unwrap())
-                    .unwrap(),
+                day: year.and_month_day(Month::Cheshvan, 30),
                 name: Name::Chol(Chol::RoshChodeshKislev1),
+                candle_lighting: None,
             }),
             Some(Holiday {
-                day: year
-                    .get_hebrew_date(HebrewMonth::Kislev, NonZeroU8::new(1).unwrap())
-                    .unwrap(),
+                day: year.and_month_day(Month::Kislev, 1),
                 name: Name::Chol(Chol::RoshChodeshKislev2),
+                candle_lighting: None,
             }),
         ]);
     } else {
         return_vec.extend(std::iter::once(Some(Holiday {
-            day: year
-                .get_hebrew_date(HebrewMonth::Kislev, NonZeroU8::new(1).unwrap())
-                .unwrap(),
+            day: year.and_month_day(Month::Kislev, 1),
             name: Name::Chol(Chol::RoshChodeshKislev),
+            candle_lighting: None,
         })));
     }
 
     if year.sched[2] == 30 {
         return_vec.extend_from_slice(&[
             Some(Holiday {
-                day: year
-                    .get_hebrew_date(HebrewMonth::Kislev, NonZeroU8::new(30).unwrap())
-                    .unwrap(),
+                day: year.and_month_day(Month::Kislev, 30),
                 name: Name::Chol(Chol::RoshChodeshTeves1),
+                candle_lighting: None,
             }),
             Some(Holiday {
-                day: year
-                    .get_hebrew_date(HebrewMonth::Teves, NonZeroU8::new(1).unwrap())
-                    .unwrap(),
+                day: year.and_month_day(Month::Teves, 1),
                 name: Name::Chol(Chol::RoshChodeshTeves2),
+                candle_lighting: None,
             }),
             Some(Holiday {
-                day: year
-                    .get_hebrew_date(HebrewMonth::Kislev, NonZeroU8::new(30).unwrap())
-                    .unwrap(),
+                day: year.and_month_day(Month::Kislev, 30),
                 name: Name::Chol(Chol::Chanukah6),
+                candle_lighting: None,
             }),
             Some(Holiday {
-                day: year
-                    .get_hebrew_date(HebrewMonth::Teves, NonZeroU8::new(1).unwrap())
-                    .unwrap(),
+                day: year.and_month_day(Month::Teves, 1),
                 name: Name::Chol(Chol::Chanukah7),
+                candle_lighting: None,
             }),
             Some(Holiday {
-                day: year
-                    .get_hebrew_date(HebrewMonth::Teves, NonZeroU8::new(2).unwrap())
-                    .unwrap(),
+                day: year.and_month_day(Month::Teves, 2),
                 name: Name::Chol(Chol::Chanukah8),
+                candle_lighting: None,
             }),
         ]);
     } else {
         return_vec.extend_from_slice(&[
             Some(Holiday {
-                day: year
-                    .get_hebrew_date(HebrewMonth::Teves, NonZeroU8::new(1).unwrap())
-                    .unwrap(),
+                day: year.and_month_day(Month::Teves, 1),
                 name: Name::Chol(Chol::RoshChodeshTeves),
+                candle_lighting: None,
             }),
             Some(Holiday {
-                day: year
-                    .get_hebrew_date(HebrewMonth::Teves, NonZeroU8::new(1).unwrap())
-                    .unwrap(),
+                day: year.and_month_day(Month::Teves, 1),
                 name: Name::Chol(Chol::Chanukah6),
+                candle_lighting: None,
             }),
             Some(Holiday {
-                day: year
-                    .get_hebrew_date(HebrewMonth::Teves, NonZeroU8::new(2).unwrap())
-                    .unwrap(),
+                day: year.and_month_day(Month::Teves, 2),
                 name: Name::Chol(Chol::Chanukah7),
+                candle_lighting: None,
             }),
             Some(Holiday {
-                day: year
-                    .get_hebrew_date(HebrewMonth::Teves, NonZeroU8::new(3).unwrap())
-                    .unwrap(),
+                day: year.and_month_day(Month::Teves, 3),
                 name: Name::Chol(Chol::Chanukah8),
+                candle_lighting: None,
             }),
         ]);
     }
@@ -213,47 +181,41 @@ pub(crate) fn get_chol_list(
         //If this is a regular year
         return_vec.extend_from_slice(&[
             Some(Holiday {
-                day: year
-                    .get_hebrew_date(HebrewMonth::Shvat, NonZeroU8::new(30).unwrap())
-                    .unwrap(),
+                day: year.and_month_day(Month::Shvat, 30),
                 name: Name::Chol(Chol::RoshChodeshAdar1),
+                candle_lighting: None,
             }),
             Some(Holiday {
-                day: year
-                    .get_hebrew_date(HebrewMonth::Adar, NonZeroU8::new(1).unwrap())
-                    .unwrap(),
+                day: year.and_month_day(Month::Adar, 1),
                 name: Name::Chol(Chol::RoshChodeshAdar2),
+                candle_lighting: None,
             }),
             // Taanis Esther is on the 13th of Adar. However, If the next Rosh Hashana starts on a Thursday, the previous Purim starts on a
             // Sunday, and Taanis Esther needs to be brought back to Thursday.
             if year.day_of_next_rh != Day::Thursday {
                 Some(Holiday {
-                    day: year
-                        .get_hebrew_date(HebrewMonth::Adar, NonZeroU8::new(13).unwrap())
-                        .unwrap(),
+                    day: year.and_month_day(Month::Adar, 13),
                     name: Name::Chol(Chol::TaanisEsther),
+                    candle_lighting: None,
                 })
             } else {
                 Some(Holiday {
-                    day: year
-                        .get_hebrew_date(HebrewMonth::Adar, NonZeroU8::new(11).unwrap())
-                        .unwrap(),
+                    day: year.and_month_day(Month::Adar, 11),
                     name: Name::Chol(Chol::TaanisEsther),
+                    candle_lighting: None,
                 })
             },
         ]);
         return_vec.extend_from_slice(&[
             Some(Holiday {
-                day: year
-                    .get_hebrew_date(HebrewMonth::Adar, NonZeroU8::new(14).unwrap())
-                    .unwrap(),
+                day: year.and_month_day(Month::Adar, 14),
                 name: Name::Chol(Chol::Purim),
+                candle_lighting: None,
             }),
             Some(Holiday {
-                day: year
-                    .get_hebrew_date(HebrewMonth::Adar, NonZeroU8::new(15).unwrap())
-                    .unwrap(),
+                day: year.and_month_day(Month::Adar, 15),
                 name: Name::Chol(Chol::ShushanPurim),
+                candle_lighting: None,
             }),
         ]);
     } else {
@@ -261,58 +223,49 @@ pub(crate) fn get_chol_list(
 
         return_vec.extend_from_slice(&[
             Some(Holiday {
-                day: year
-                    .get_hebrew_date(HebrewMonth::Shvat, NonZeroU8::new(30).unwrap())
-                    .unwrap(),
+                day: year.and_month_day(Month::Shvat, 30),
                 name: Name::Chol(Chol::RoshChodeshAdarRishon1),
+                candle_lighting: None,
             }),
             Some(Holiday {
                 name: Name::Chol(Chol::RoshChodeshAdarRishon2),
-                day: year
-                    .get_hebrew_date(HebrewMonth::Adar1, NonZeroU8::new(1).unwrap())
-                    .unwrap(),
+                candle_lighting: None,
+                day: year.and_month_day(Month::Adar1, 1),
             }),
             Some(Holiday {
-                day: year
-                    .get_hebrew_date(HebrewMonth::Adar1, NonZeroU8::new(30).unwrap())
-                    .unwrap(),
+                day: year.and_month_day(Month::Adar1, 30),
                 name: Name::Chol(Chol::RoshChodeshAdarSheni1),
+                candle_lighting: None,
             }),
             Some(Holiday {
-                day: year
-                    .get_hebrew_date(HebrewMonth::Adar2, NonZeroU8::new(1).unwrap())
-                    .unwrap(),
+                day: year.and_month_day(Month::Adar2, 1),
                 name: Name::Chol(Chol::RoshChodeshAdarSheni2),
+                candle_lighting: None,
             }),
             // If the next Rosh Hashana starts on a Thursday, the previous Purim starts on a
             // Sunday, and Taanis Esther needs to be brought back to Thursday.
             if year.day_of_next_rh != Day::Thursday {
                 Some(Holiday {
-                    day: year
-                        .get_hebrew_date(HebrewMonth::Adar2, NonZeroU8::new(13).unwrap())
-                        .unwrap(),
-
+                    day: year.and_month_day(Month::Adar2, 13),
                     name: Name::Chol(Chol::TaanisEsther),
+                    candle_lighting: None,
                 })
             } else {
                 Some(Holiday {
-                    day: year
-                        .get_hebrew_date(HebrewMonth::Adar2, NonZeroU8::new(11).unwrap())
-                        .unwrap(),
+                    day: year.and_month_day(Month::Adar2, 11),
                     name: Name::Chol(Chol::TaanisEsther),
+                    candle_lighting: None,
                 })
             },
             Some(Holiday {
-                day: year
-                    .get_hebrew_date(HebrewMonth::Adar2, NonZeroU8::new(14).unwrap())
-                    .unwrap(),
+                day: year.and_month_day(Month::Adar2, 14),
                 name: Name::Chol(Chol::Purim),
+                candle_lighting: None,
             }),
             Some(Holiday {
-                day: year
-                    .get_hebrew_date(HebrewMonth::Adar2, NonZeroU8::new(15).unwrap())
-                    .unwrap(),
+                day: year.and_month_day(Month::Adar2, 15),
                 name: Name::Chol(Chol::ShushanPurim),
+                candle_lighting: None,
             }),
         ]);
     }
@@ -322,53 +275,47 @@ pub(crate) fn get_chol_list(
     return_vec.extend_from_slice(&if year.day_of_next_rh == Day::Monday {
         [
             Some(Holiday {
-                day: year
-                    .get_hebrew_date(HebrewMonth::Tammuz, NonZeroU8::new(18).unwrap())
-                    .unwrap(),
+                day: year.and_month_day(Month::Tammuz, 18),
                 name: Name::Chol(Chol::SeventeenTammuz),
+                candle_lighting: None,
             }),
             Some(Holiday {
-                day: year
-                    .get_hebrew_date(HebrewMonth::Av, NonZeroU8::new(10).unwrap())
-                    .unwrap(),
+                day: year.and_month_day(Month::Av, 10),
                 name: Name::Chol(Chol::NineAv),
+                candle_lighting: None,
             }),
         ]
     } else {
         [
             Some(Holiday {
-                day: year
-                    .get_hebrew_date(HebrewMonth::Tammuz, NonZeroU8::new(17).unwrap())
-                    .unwrap(),
+                day: year.and_month_day(Month::Tammuz, 17),
                 name: Name::Chol(Chol::SeventeenTammuz),
+                candle_lighting: None,
             }),
             Some(Holiday {
-                day: year
-                    .get_hebrew_date(HebrewMonth::Av, NonZeroU8::new(9).unwrap())
-                    .unwrap(),
+                day: year.and_month_day(Month::Av, 9),
                 name: Name::Chol(Chol::NineAv),
+                candle_lighting: None,
             }),
         ]
     });
     return_vec.extend(std::iter::once(if year.day_of_rh == Day::Thursday {
         Some(Holiday {
-            day: year
-                .get_hebrew_date(HebrewMonth::Tishrei, NonZeroU8::new(4).unwrap())
-                .unwrap(),
+            day: year.and_month_day(Month::Tishrei, 4),
             name: Name::Chol(Chol::TzomGedalia),
+            candle_lighting: None,
         })
     } else {
         Some(Holiday {
-            day: year
-                .get_hebrew_date(HebrewMonth::Tishrei, NonZeroU8::new(3).unwrap())
-                .unwrap(),
+            day: year.and_month_day(Month::Tishrei, 3),
             name: Name::Chol(Chol::TzomGedalia),
+            candle_lighting: None,
         })
     }))
 }
 
 /// Possible weekday Torah readings
-#[derive(Eq, PartialEq, Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Eq, PartialEq, Debug, Clone, Copy)]
 pub enum Chol {
     TzomGedalia,
     RoshChodeshCheshvan1,

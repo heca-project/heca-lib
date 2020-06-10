@@ -1,19 +1,18 @@
-use serde::{Deserialize, Serialize};
-
 use super::{Holiday, Name};
 use crate::{
+    hebrew::{Date, Year},
     prelude::{Day, Location},
-    HebrewDate, HebrewYear,
 };
 
 use tinyvec::TinyVec;
 
 /// This is based on the Biyur Halacha to Orach Chaim 428:4:3
-pub(crate) fn get_shabbos_list(
-    year: &HebrewYear,
+pub(crate) fn get<S: Clone, T: Fn(&Date) -> S>(
+    year: &Year,
     location: Location,
-    ignore_dates: &TinyVec<impl tinyvec::Array<Item = Option<Holiday>>>,
-    return_vec: &mut TinyVec<impl tinyvec::Array<Item = Option<Holiday>>>,
+    ignore_dates: &TinyVec<impl tinyvec::Array<Item = Option<Holiday<S>>>>,
+    return_vec: &mut TinyVec<impl tinyvec::Array<Item = Option<Holiday<S>>>>,
+    candle_lighting_func: &Option<T>,
 ) {
     let rh_dow = year.day_of_rh;
     let rh_dow_next = year.day_of_next_rh;
@@ -106,37 +105,31 @@ pub(crate) fn get_shabbos_list(
     } else {
         parsha_vec.push(Parsha::NitzavimVayelech);
     }
-    eprintln!(
-        "{}, {:?}, {}",
-        regular_shabbosim_list
-            .iter()
-            .map(|x| format!("{:?}/{}/{}", x.month(), x.day(), x.year()))
-            .fold(String::new(), |old, new| format!("{},{}", old, new)),
-        ignore_dates,
-        year.year()
-    );
-    return_vec.extend(regular_shabbosim_list.iter().enumerate().map(|(i, &v)| {
+    return_vec.extend(regular_shabbosim_list.iter().enumerate().map(|(i, &day)| {
+        let candle_lighting = candle_lighting_func.as_ref().map(|ref x| x(&day));
+        let name = Name::Shabbos(parsha_vec[i]);
         Some(Holiday {
-            name: Name::Shabbos(parsha_vec[i]),
-            day: v,
+            day,
+            name,
+            candle_lighting,
         })
     }))
 }
 
-pub(crate) fn get_shabbosim(
-    year: &HebrewYear,
-    ignore_dates: &TinyVec<impl tinyvec::Array<Item = Option<Holiday>>>,
-) -> Vec<HebrewDate> {
+pub(crate) fn get_shabbosim<S: Clone>(
+    year: &Year,
+    ignore_dates: &TinyVec<impl tinyvec::Array<Item = Option<Holiday<S>>>>,
+) -> Vec<Date> {
     let amnt_days_to_shabbos = Day::Shabbos as u32 - (year.day_of_rh as u32);
     let mut cur_day = year.days_since_epoch + amnt_days_to_shabbos;
-    let mut return_regular_shabbosim: Vec<HebrewDate> = Vec::with_capacity(60);
+    let mut return_regular_shabbosim: Vec<Date> = Vec::with_capacity(60);
     while cur_day < year.days_since_epoch + year.year_len as u32 {
         let day = year.get_hebrewdate_from_days_after_rh(cur_day);
         if ignore_dates
             .iter()
             .filter(|x| {
                 if x.is_some() {
-                    x.unwrap().day() == day
+                    x.as_ref().unwrap().day() == day
                 } else {
                     false
                 }
@@ -197,7 +190,7 @@ const DEVARIM_KISAVO: [Parsha; 7] = [
 ];
 
 /// Weekly Torah Portion
-#[derive(Clone, Debug, Eq, PartialEq, Copy, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Copy)]
 pub enum Parsha {
     Vayelech,
     Haazinu,

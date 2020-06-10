@@ -2,15 +2,18 @@ pub use crate::holidays::chol::Chol;
 pub use crate::holidays::shabbos::Parsha;
 pub use crate::holidays::special_parsha::SpecialParsha;
 pub use crate::holidays::yom_tov::YomTov;
-pub use crate::holidays::{Holiday, Name};
+use crate::internal::calendar::{CHALAKIM_PER_DAY, CHALAKIM_PER_MINUTE, EPOCH};
+pub use crate::{
+    hebrew::Date,
+    holidays::{Holiday, Name},
+    secular::Duration,
+};
 #[doc(inline)]
-use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
 use std::fmt;
 use std::num::NonZeroU8;
 
-#[derive(Debug, PartialEq, Eq, Ord, PartialOrd, Copy, Clone, Serialize, Deserialize)]
-
+#[derive(Debug, PartialEq, Eq, Ord, PartialOrd, Copy, Clone)]
 pub enum Day {
     Sunday,
     Monday,
@@ -21,7 +24,6 @@ pub enum Day {
     Shabbos,
 }
 
-/// Notes: This panics if input is larger than 6, so this will be converted to a TryFrom in a future release.
 impl TryFrom<u8> for Day {
     type Error = ConversionError;
     fn try_from(input: u8) -> Result<Self, ConversionError> {
@@ -38,69 +40,46 @@ impl TryFrom<u8> for Day {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Copy, Clone, Ord, PartialOrd)]
+impl From<Day> for u8 {
+    fn from(it: Day) -> u8 {
+        match it {
+            Day::Sunday => 0,
+            Day::Monday => 1,
+            Day::Tuesday => 2,
+            Day::Wednesday => 3,
+            Day::Thursday => 4,
+            Day::Friday => 5,
+            Day::Shabbos => 6,
+        }
+    }
+}
+
+#[derive(Eq, PartialEq, Debug, Copy, Clone, Ord, PartialOrd)]
 pub struct Molad {
-    pub(crate) day: chrono::NaiveDateTime,
-    pub(crate) remainder: u16,
+    pub(crate) chalakim_since_epoch: u64,
 }
 
-impl Molad {
-    pub fn get_day_utc(&self) -> chrono::NaiveDateTime {
-        self.day
-    }
-    pub fn get_chalakim(&self) -> u16 {
-        self.remainder
+impl From<Molad> for crate::secular::Date {
+    fn from(molad: Molad) -> Self {
+        let days = molad.chalakim_since_epoch / CHALAKIM_PER_DAY as u64;
+        let remainder = molad.chalakim_since_epoch % CHALAKIM_PER_DAY as u64;
+        let minutes = remainder / CHALAKIM_PER_MINUTE as u64;
+        let remainder = remainder % CHALAKIM_PER_MINUTE as u64;
+        *EPOCH
+            + Duration::days(days as i32)
+            + Duration::minutes(minutes as i32)
+            + Duration::chalakim(remainder as i32)
     }
 }
 
-#[derive(Eq, PartialEq, Clone, Copy, Serialize, Deserialize)]
+#[derive(Eq, PartialEq, Clone, Copy)]
 pub enum Location {
     Israel,
     Chul,
 }
 
-#[derive(Debug, PartialEq, Eq, Copy, Clone, Serialize, Deserialize, Ord, PartialOrd)]
-pub enum HebrewMonth {
-    Tishrei,
-    Cheshvan,
-    Kislev,
-    Teves,
-    Shvat,
-    Adar,
-    Adar1,
-    Adar2,
-    Nissan,
-    Iyar,
-    Sivan,
-    Tammuz,
-    Av,
-    Elul,
-}
-impl TryFrom<u8> for HebrewMonth {
-    type Error = ConversionError;
-    fn try_from(input: u8) -> Result<Self, Self::Error> {
-        match input {
-            0 => Ok(HebrewMonth::Tishrei),
-            1 => Ok(HebrewMonth::Cheshvan),
-            2 => Ok(HebrewMonth::Kislev),
-            3 => Ok(HebrewMonth::Teves),
-            4 => Ok(HebrewMonth::Shvat),
-            5 => Ok(HebrewMonth::Adar),
-            6 => Ok(HebrewMonth::Adar1),
-            7 => Ok(HebrewMonth::Adar2),
-            8 => Ok(HebrewMonth::Nissan),
-            9 => Ok(HebrewMonth::Iyar),
-            10 => Ok(HebrewMonth::Sivan),
-            11 => Ok(HebrewMonth::Tammuz),
-            12 => Ok(HebrewMonth::Av),
-            13 => Ok(HebrewMonth::Elul),
-            _ => Err(ConversionError::TooManyHebrewMonths),
-        }
-    }
-}
-
 ///Occurs when failing to get a Hebrew Date.
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum ConversionError {
     /// Occurs when attempting to get an Adar 1 or Adar 2 in a non-leap year.
     ///
@@ -186,9 +165,10 @@ impl fmt::Display for ConversionError {
         }
     }
 }
-/// What Torah Readings are we looking for
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, Eq, PartialEq)]
-pub enum TorahReadingType {
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+#[non_exhaustive]
+pub enum HolidayType {
     /// Yom Tov - Pesach, Shavuos, Sukkos, Shmini Atzeres/Simchas Torah, Rosh Hashana, Yom Kippur and Chol HaMoed.
     YomTov,
     /// Weekday Torah reading - Rosh Chodesh, Chanuka and Purim
@@ -197,6 +177,9 @@ pub enum TorahReadingType {
     Shabbos,
     /// One of the four special Torah portions read every winter (Shekalim, Zachor, Parah and HaChodesh).
     SpecialParsha,
+    Omer,
+    MinorHolidays,
+    ShabbosMevarchim,
 }
 
 /// A Hebrew year can be defined by three variables:
@@ -279,8 +262,8 @@ pub enum TorahReadingType {
 ///
 /// ~~~
 ///
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, Eq, PartialEq)]
-pub enum MonthSchedule {
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub enum YearSchedule {
     BaChaG,
     BaShaH,
     GaChaH,

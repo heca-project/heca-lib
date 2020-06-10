@@ -1,167 +1,145 @@
-use serde::{Deserialize, Serialize};
-
 use super::{Holiday, Name};
 use crate::{
-    prelude::{HebrewMonth, Location},
-    HebrewYear,
+    hebrew::{Date, Month, Year},
+    prelude::Location,
 };
 use std::num::NonZeroU8;
 use tinyvec::TinyVec;
 
 #[inline]
-pub(crate) fn get_yt_list(
-    year: &HebrewYear,
+pub(crate) fn get<S: Clone, T: Fn(&Date) -> S>(
+    year: &Year,
     location: Location,
-    array_vec: &mut TinyVec<impl tinyvec::Array<Item = Option<Holiday>>>,
+    array_vec: &mut TinyVec<impl tinyvec::Array<Item = Option<Holiday<S>>>>,
+    _candle_lighting_func: &Option<T>,
 ) {
-    array_vec.extend_from_slice(&[
+    let arr1 = [
         Some(Holiday {
-            day: year
-                .get_hebrew_date(HebrewMonth::Tishrei, NonZeroU8::new(1).unwrap())
-                .unwrap(),
+            day: year.and_month_day(Month::Tishrei, 1),
             name: Name::YomTov(YomTov::RoshHashanah1),
+            candle_lighting: None,
         }),
         Some(Holiday {
-            day: year
-                .get_hebrew_date(HebrewMonth::Tishrei, NonZeroU8::new(2).unwrap())
-                .unwrap(),
+            day: year.and_month_day(Month::Tishrei, 2),
             name: Name::YomTov(YomTov::RoshHashanah2),
+            candle_lighting: None,
         }),
         Some(Holiday {
-            day: year
-                .get_hebrew_date(HebrewMonth::Tishrei, NonZeroU8::new(10).unwrap())
-                .unwrap(),
+            day: year.and_month_day(Month::Tishrei, 10),
             name: Name::YomTov(YomTov::YomKippur),
+            candle_lighting: None,
         }),
         Some(Holiday {
-            day: year
-                .get_hebrew_date(HebrewMonth::Tishrei, NonZeroU8::new(15).unwrap())
-                .unwrap(),
+            day: year.and_month_day(Month::Tishrei, 15),
             name: Name::YomTov(YomTov::Sukkos1),
+            candle_lighting: None,
         }),
         Some(Holiday {
-            day: year
-                .get_hebrew_date(HebrewMonth::Tishrei, NonZeroU8::new(16).unwrap())
-                .unwrap(),
+            day: year.and_month_day(Month::Tishrei, 16),
             name: Name::YomTov(YomTov::Sukkos2),
+            candle_lighting: None,
         }),
         Some(Holiday {
-            day: year
-                .get_hebrew_date(HebrewMonth::Tishrei, NonZeroU8::new(17).unwrap())
-                .unwrap(),
+            day: year.and_month_day(Month::Tishrei, 17),
             name: Name::YomTov(YomTov::Sukkos3),
+            candle_lighting: None,
         }),
         Some(Holiday {
-            day: year
-                .get_hebrew_date(HebrewMonth::Tishrei, NonZeroU8::new(18).unwrap())
-                .unwrap(),
+            day: year.and_month_day(Month::Tishrei, 18),
             name: Name::YomTov(YomTov::Sukkos4),
+            candle_lighting: None,
         }),
         Some(Holiday {
-            day: year
-                .get_hebrew_date(HebrewMonth::Tishrei, NonZeroU8::new(19).unwrap())
-                .unwrap(),
+            day: year.and_month_day(Month::Tishrei, 19),
             name: Name::YomTov(YomTov::Sukkos5),
+            candle_lighting: None,
         }),
         Some(Holiday {
-            day: year
-                .get_hebrew_date(HebrewMonth::Tishrei, NonZeroU8::new(20).unwrap())
-                .unwrap(),
+            day: year.and_month_day(Month::Tishrei, 20),
             name: Name::YomTov(YomTov::Sukkos6),
+            candle_lighting: None,
         }),
         Some(Holiday {
-            day: year
-                .get_hebrew_date(HebrewMonth::Tishrei, NonZeroU8::new(21).unwrap())
-                .unwrap(),
+            day: year.and_month_day(Month::Tishrei, 21),
             name: Name::YomTov(YomTov::Sukkos7),
+            candle_lighting: None,
         }),
         Some(Holiday {
-            day: year
-                .get_hebrew_date(HebrewMonth::Tishrei, NonZeroU8::new(22).unwrap())
-                .unwrap(),
+            day: year.and_month_day(Month::Tishrei, 22),
             name: Name::YomTov(YomTov::ShminiAtzeres),
+            candle_lighting: None,
         }),
-    ]);
+    ];
+    array_vec.extend_from_slice(&arr1);
     if location == Location::Chul {
         array_vec.extend(std::iter::once(Some(Holiday {
-            day: year
-                .get_hebrew_date(HebrewMonth::Tishrei, NonZeroU8::new(23).unwrap())
-                .unwrap(),
+            day: year.and_month_day(Month::Tishrei, 23),
             name: Name::YomTov(YomTov::SimchasTorah),
+            candle_lighting: None,
         })));
     }
     array_vec.extend_from_slice(&[
         Some(Holiday {
-            day: year
-                .get_hebrew_date(HebrewMonth::Nissan, NonZeroU8::new(15).unwrap())
-                .unwrap(),
+            day: year.and_month_day(Month::Nissan, 15),
             name: Name::YomTov(YomTov::Pesach1),
+            candle_lighting: None,
         }),
         Some(Holiday {
-            day: year
-                .get_hebrew_date(HebrewMonth::Nissan, NonZeroU8::new(16).unwrap())
-                .unwrap(),
+            day: year.and_month_day(Month::Nissan, 16),
             name: Name::YomTov(YomTov::Pesach2),
+            candle_lighting: None,
         }),
         Some(Holiday {
-            day: year
-                .get_hebrew_date(HebrewMonth::Nissan, NonZeroU8::new(17).unwrap())
-                .unwrap(),
+            day: year.and_month_day(Month::Nissan, 17),
             name: Name::YomTov(YomTov::Pesach3),
+            candle_lighting: None,
         }),
         Some(Holiday {
-            day: year
-                .get_hebrew_date(HebrewMonth::Nissan, NonZeroU8::new(18).unwrap())
-                .unwrap(),
+            day: year.and_month_day(Month::Nissan, 18),
             name: Name::YomTov(YomTov::Pesach4),
+            candle_lighting: None,
         }),
         Some(Holiday {
-            day: year
-                .get_hebrew_date(HebrewMonth::Nissan, NonZeroU8::new(19).unwrap())
-                .unwrap(),
+            day: year.and_month_day(Month::Nissan, 19),
             name: Name::YomTov(YomTov::Pesach5),
+            candle_lighting: None,
         }),
         Some(Holiday {
-            day: year
-                .get_hebrew_date(HebrewMonth::Nissan, NonZeroU8::new(20).unwrap())
-                .unwrap(),
+            day: year.and_month_day(Month::Nissan, 20),
             name: Name::YomTov(YomTov::Pesach6),
+            candle_lighting: None,
         }),
         Some(Holiday {
-            day: year
-                .get_hebrew_date(HebrewMonth::Nissan, NonZeroU8::new(21).unwrap())
-                .unwrap(),
+            day: year.and_month_day(Month::Nissan, 21),
             name: Name::YomTov(YomTov::Pesach7),
+            candle_lighting: None,
         }),
     ]);
 
     if location == Location::Chul {
         array_vec.extend(std::iter::once(Some(Holiday {
-            day: year
-                .get_hebrew_date(HebrewMonth::Nissan, NonZeroU8::new(22).unwrap())
-                .unwrap(),
+            day: year.and_month_day(Month::Nissan, 22),
             name: Name::YomTov(YomTov::Pesach8),
+            candle_lighting: None,
         })));
     }
     array_vec.extend(std::iter::once(Some(Holiday {
-        day: year
-            .get_hebrew_date(HebrewMonth::Sivan, NonZeroU8::new(6).unwrap())
-            .unwrap(),
+        day: year.and_month_day(Month::Sivan, 6),
         name: Name::YomTov(YomTov::Shavuos1),
+        candle_lighting: None,
     })));
 
     if location == Location::Chul {
         array_vec.extend(std::iter::once(Some(Holiday {
-            day: year
-                .get_hebrew_date(HebrewMonth::Sivan, NonZeroU8::new(7).unwrap())
-                .unwrap(),
+            day: year.and_month_day(Month::Sivan, 7),
             name: Name::YomTov(YomTov::Shavuos2),
+            candle_lighting: None,
         })));
     }
 }
 
 /// Yom Tov, including Rosh Hashana, Yom Kippur and Chol HaMoed
-#[derive(Eq, PartialEq, Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Eq, PartialEq, Debug, Clone, Copy)]
 pub enum YomTov {
     RoshHashanah1,
     RoshHashanah2,

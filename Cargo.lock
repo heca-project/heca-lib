@@ -193,7 +193,6 @@ dependencies = [
  "num 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "once_cell 1.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "rayon 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.110 (registry+https://github.com/rust-lang/crates.io-index)",
  "tinyvec 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -464,9 +463,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 name = "serde"
 version = "1.0.110"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-dependencies = [
- "serde_derive 1.0.110 (registry+https://github.com/rust-lang/crates.io-index)",
-]
 
 [[package]]
 name = "serde_derive"

@@ -157,11 +157,8 @@ mod tests {
 
     #[test]
     fn years_have_right_days() {
-        use rayon;
-        use rayon::prelude::*;
-
         (((FIRST_YEAR + 1) as u32)..297000)
-            .into_par_iter()
+            .into_iter()
             .map(|i: u32| {
                 let amnt_days_between_rh_and_epoch = get_rosh_hashana(i as u32).0;
                 let amnt_days_in_year = get_rosh_hashana(i + 1).0 - amnt_days_between_rh_and_epoch;

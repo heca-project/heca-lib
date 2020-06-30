@@ -921,6 +921,14 @@ fn ensure_all_days_of_sukkos_come_after_another() {
                 .iter()
                 .find(|x| x.name() == Name::YomTov(YomTov::Sukkos7))
                 .unwrap(),
+            yom_tovs
+                .iter()
+                .find(|x| x.name() == Name::YomTov(YomTov::ShminiAtzeres))
+                .unwrap(),
+            yom_tovs
+                .iter()
+                .find(|x| x.name() == Name::YomTov(YomTov::SimchasTorah))
+                .unwrap(),
         ];
         days_of_sukkos
             .iter()

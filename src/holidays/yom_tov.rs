@@ -1,139 +1,272 @@
 use super::{Holiday, Name};
 use crate::{
     hebrew::{Date, Month, Year},
-    prelude::Location,
+    prelude::{Day, Location},
 };
 use std::num::NonZeroU8;
 use tinyvec::TinyVec;
 
 #[inline]
-pub(crate) fn get<S: Clone, T: Fn(&Date) -> S>(
+pub(crate) fn get<S: Clone, T: Fn(Date) -> S, U: Fn(Date) -> S>(
     year: &Year,
     location: Location,
     array_vec: &mut TinyVec<impl tinyvec::Array<Item = Option<Holiday<S>>>>,
-    _candle_lighting_func: &Option<T>,
+    shkiya_func: Option<T>,
+    tzeis_func: Option<U>,
 ) {
     let arr1 = [
-        Some(Holiday {
-            day: year.and_month_day(Month::Tishrei, 1),
-            name: Name::YomTov(YomTov::RoshHashanah1),
-            candle_lighting: None,
-        }),
-        Some(Holiday {
-            day: year.and_month_day(Month::Tishrei, 2),
-            name: Name::YomTov(YomTov::RoshHashanah2),
-            candle_lighting: None,
-        }),
-        Some(Holiday {
-            day: year.and_month_day(Month::Tishrei, 10),
-            name: Name::YomTov(YomTov::YomKippur),
-            candle_lighting: None,
-        }),
-        Some(Holiday {
-            day: year.and_month_day(Month::Tishrei, 15),
-            name: Name::YomTov(YomTov::Sukkos1),
-            candle_lighting: None,
-        }),
-        Some(Holiday {
-            day: year.and_month_day(Month::Tishrei, 16),
-            name: Name::YomTov(YomTov::Sukkos2),
-            candle_lighting: None,
-        }),
+        {
+            let day = year.and_month_day(Month::Tishrei, 1);
+            let candle_lighting = shkiya_func.as_ref().map(|ref x| x(day));
+            let tzeis = tzeis_func.as_ref().map(|ref x| x(day));
+            Some(Holiday {
+                day,
+                name: Name::YomTov(YomTov::RoshHashanah1),
+                candle_lighting,
+                tzeis: tzeis,
+            })
+        },
+        {
+            let day = year.and_month_day(Month::Tishrei, 2);
+            let candle_lighting = shkiya_func.as_ref().map(|ref x| x(day));
+            let tzeis = tzeis_func.as_ref().map(|ref x| x(day));
+            Some(Holiday {
+                day: day,
+                name: Name::YomTov(YomTov::RoshHashanah2),
+                candle_lighting,
+                tzeis,
+            })
+        },
+        {
+            let day = year.and_month_day(Month::Tishrei, 10);
+            let candle_lighting = shkiya_func.as_ref().map(|ref x| x(day));
+            let tzeis = tzeis_func.as_ref().map(|ref x| x(day));
+
+            Some(Holiday {
+                day,
+                name: Name::YomTov(YomTov::YomKippur),
+                candle_lighting,
+                tzeis,
+            })
+        },
+        {
+            let day = year.and_month_day(Month::Tishrei, 15);
+            let tzeis = tzeis_func.as_ref().map(|ref x| x(day));
+
+            let candle_lighting = if day.day_of_week() == Day::Sunday {
+                tzeis_func.as_ref().map(|ref x| x(day))
+            } else {
+                shkiya_func.as_ref().map(|ref x| x(day))
+            };
+            Some(Holiday {
+                day,
+                name: Name::YomTov(YomTov::Sukkos1),
+                candle_lighting,
+                tzeis,
+            })
+        },
+        {
+            let day = year.and_month_day(Month::Tishrei, 16);
+            let tzeis = tzeis_func.as_ref().map(|ref x| x(day));
+
+            let candle_lighting = if location == Location::Chul {
+                if day.day_of_week() == Day::Shabbos {
+                    shkiya_func.as_ref().map(|ref x| x(day))
+                } else {
+                    tzeis_func.as_ref().map(|ref x| x(day))
+                }
+            } else {
+                None
+            };
+
+            Some(Holiday {
+                day,
+                name: Name::YomTov(YomTov::Sukkos2),
+                candle_lighting,
+                tzeis,
+            })
+        },
         Some(Holiday {
             day: year.and_month_day(Month::Tishrei, 17),
             name: Name::YomTov(YomTov::Sukkos3),
             candle_lighting: None,
+            tzeis: None,
         }),
         Some(Holiday {
             day: year.and_month_day(Month::Tishrei, 18),
             name: Name::YomTov(YomTov::Sukkos4),
             candle_lighting: None,
+            tzeis: None,
         }),
         Some(Holiday {
             day: year.and_month_day(Month::Tishrei, 19),
             name: Name::YomTov(YomTov::Sukkos5),
             candle_lighting: None,
+            tzeis: None,
         }),
         Some(Holiday {
             day: year.and_month_day(Month::Tishrei, 20),
             name: Name::YomTov(YomTov::Sukkos6),
             candle_lighting: None,
+            tzeis: None,
         }),
         Some(Holiday {
             day: year.and_month_day(Month::Tishrei, 21),
             name: Name::YomTov(YomTov::Sukkos7),
             candle_lighting: None,
+            tzeis: None,
         }),
-        Some(Holiday {
-            day: year.and_month_day(Month::Tishrei, 22),
-            name: Name::YomTov(YomTov::ShminiAtzeres),
-            candle_lighting: None,
-        }),
+        {
+            let day = year.and_month_day(Month::Tishrei, 22);
+            let tzeis = tzeis_func.as_ref().map(|ref x| x(day));
+
+            let candle_lighting = shkiya_func.as_ref().map(|ref x| x(day));
+            Some(Holiday {
+                day,
+                name: Name::YomTov(YomTov::ShminiAtzeres),
+                candle_lighting,
+                tzeis,
+            })
+        },
     ];
     array_vec.extend_from_slice(&arr1);
     if location == Location::Chul {
+        let day = year.and_month_day(Month::Tishrei, 23);
+        let candle_lighting = shkiya_func.as_ref().map(|ref x| x(day));
+        let tzeis = tzeis_func.as_ref().map(|ref x| x(day));
+
         array_vec.extend(std::iter::once(Some(Holiday {
-            day: year.and_month_day(Month::Tishrei, 23),
+            day,
             name: Name::YomTov(YomTov::SimchasTorah),
-            candle_lighting: None,
+            candle_lighting,
+            tzeis,
         })));
     }
     array_vec.extend_from_slice(&[
-        Some(Holiday {
-            day: year.and_month_day(Month::Nissan, 15),
-            name: Name::YomTov(YomTov::Pesach1),
-            candle_lighting: None,
-        }),
-        Some(Holiday {
-            day: year.and_month_day(Month::Nissan, 16),
-            name: Name::YomTov(YomTov::Pesach2),
-            candle_lighting: None,
-        }),
+        {
+            let day = year.and_month_day(Month::Nissan, 15);
+            let tzeis = tzeis_func.as_ref().map(|ref x| x(day));
+
+            let candle_lighting = if day.day_of_week() == Day::Sunday {
+                tzeis_func.as_ref().map(|ref x| x(day))
+            } else {
+                shkiya_func.as_ref().map(|ref x| x(day))
+            };
+            Some(Holiday {
+                day,
+                name: Name::YomTov(YomTov::Pesach1),
+                candle_lighting,
+                tzeis,
+            })
+        },
+        {
+            let day = year.and_month_day(Month::Nissan, 16);
+            let candle_lighting = if location == Location::Chul {
+                if day.day_of_week() == Day::Friday {
+                    shkiya_func.as_ref().map(|ref x| x(day))
+                } else {
+                    tzeis_func.as_ref().map(|ref x| x(day))
+                }
+            } else {
+                None
+            };
+            let tzeis = tzeis_func.as_ref().map(|ref x| x(day));
+
+            Some(Holiday {
+                day: year.and_month_day(Month::Nissan, 16),
+                name: Name::YomTov(YomTov::Pesach2),
+                candle_lighting: candle_lighting,
+                tzeis,
+            })
+        },
         Some(Holiday {
             day: year.and_month_day(Month::Nissan, 17),
             name: Name::YomTov(YomTov::Pesach3),
             candle_lighting: None,
+            tzeis: None,
         }),
         Some(Holiday {
             day: year.and_month_day(Month::Nissan, 18),
             name: Name::YomTov(YomTov::Pesach4),
             candle_lighting: None,
+            tzeis: None,
         }),
         Some(Holiday {
             day: year.and_month_day(Month::Nissan, 19),
             name: Name::YomTov(YomTov::Pesach5),
             candle_lighting: None,
+            tzeis: None,
         }),
         Some(Holiday {
             day: year.and_month_day(Month::Nissan, 20),
             name: Name::YomTov(YomTov::Pesach6),
             candle_lighting: None,
+            tzeis: None,
         }),
-        Some(Holiday {
-            day: year.and_month_day(Month::Nissan, 21),
-            name: Name::YomTov(YomTov::Pesach7),
-            candle_lighting: None,
-        }),
+        {
+            let day = year.and_month_day(Month::Nissan, 21);
+            let tzeis = tzeis_func.as_ref().map(|ref x| x(day));
+
+            let candle_lighting = if day.day_of_week() == Day::Sunday {
+                tzeis_func.as_ref().map(|ref x| x(day))
+            } else {
+                shkiya_func.as_ref().map(|ref x| x(day))
+            };
+            Some(Holiday {
+                day,
+                name: Name::YomTov(YomTov::Pesach7),
+                candle_lighting,
+                tzeis,
+            })
+        },
     ]);
 
     if location == Location::Chul {
+        let day = year.and_month_day(Month::Nissan, 22);
+        let candle_lighting = if day.day_of_week() == Day::Shabbos {
+            shkiya_func.as_ref().map(|ref x| x(day))
+        } else {
+            tzeis_func.as_ref().map(|ref x| x(day))
+        };
         array_vec.extend(std::iter::once(Some(Holiday {
-            day: year.and_month_day(Month::Nissan, 22),
+            day,
             name: Name::YomTov(YomTov::Pesach8),
             candle_lighting: None,
+            tzeis: None,
         })));
     }
-    array_vec.extend(std::iter::once(Some(Holiday {
-        day: year.and_month_day(Month::Sivan, 6),
-        name: Name::YomTov(YomTov::Shavuos1),
-        candle_lighting: None,
-    })));
+
+    {
+        let day = year.and_month_day(Month::Sivan, 6);
+        let candle_lighting = if day.day_of_week() == Day::Sunday {
+            tzeis_func.as_ref().map(|ref x| x(day))
+        } else {
+            shkiya_func.as_ref().map(|ref x| x(day))
+        };
+        let tzeis = tzeis_func.as_ref().map(|ref x| x(day));
+
+        array_vec.extend(std::iter::once(Some(Holiday {
+            day,
+            name: Name::YomTov(YomTov::Shavuos1),
+            candle_lighting,
+            tzeis,
+        })));
+    }
 
     if location == Location::Chul {
+        let day = year.and_month_day(Month::Sivan, 7);
+        let tzeis = tzeis_func.as_ref().map(|ref x| x(day));
+
+        let candle_lighting = if day.day_of_week() == Day::Shabbos {
+            shkiya_func.as_ref().map(|ref x| x(day))
+        } else {
+            tzeis_func.as_ref().map(|ref x| x(day))
+        };
         array_vec.extend(std::iter::once(Some(Holiday {
-            day: year.and_month_day(Month::Sivan, 7),
+            day,
             name: Name::YomTov(YomTov::Shavuos2),
-            candle_lighting: None,
+            candle_lighting: candle_lighting,
+            tzeis,
         })));
     }
 }

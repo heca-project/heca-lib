@@ -61,6 +61,7 @@ pub(crate) fn get<T: Clone>(
                         molad,
                     },
                     candle_lighting: None,
+                    tzeis: None,
                 })
             }),
     );
@@ -107,7 +108,7 @@ fn offset(day: Day) -> u8 {
 fn test_get_molad() {
     for year in 5700..6000 {
         let mut v: TinyVec<[Option<Holiday<u8>>; 4]> = TinyVec::new();
-        get(&Year::new(year).unwrap(), &mut v);
+        get(&Year::new(year), &mut v);
         for v in v {
             let shabbos_mevarchim: crate::secular::Date = v.unwrap().day.into();
             assert_eq!(shabbos_mevarchim.weekday(), crate::prelude::Day::Friday);
@@ -117,5 +118,5 @@ fn test_get_molad() {
 
 #[test]
 fn test_get_leap_year() {
-    assert_eq!(Year::new(5701).unwrap().is_leap_year(), false);
+    assert_eq!(Year::new(5701).is_leap_year(), false);
 }

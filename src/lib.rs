@@ -69,14 +69,14 @@
 //!
 //!```
 //!
-//!use std::num::NonZeroU8;
+//! use std::num::NonZeroU8;
 //!
-//!use heca_lib::{HebrewYear,HebrewDate};
-//!use heca_lib::prelude::*;
+//! use heca_lib::{HebrewYear,HebrewDate};
+//! use heca_lib::prelude::*;
 //!
-//!assert_eq!(HebrewYear::new(5779)?.get_holidays_vec(Location::Chul, &[HolidayType::Shabbos], &None::<fn(&HebrewDate)>)[0].name(), Name::Shabbos(Parsha::Vayelech));
-//!assert_eq!(HebrewYear::new(5779)?.get_holidays_vec(Location::Chul, &[HolidayType::SpecialParsha], &None::<fn(&HebrewDate)> ).iter().find(|x| x.name() == Name::SpecialParsha(SpecialParsha::Zachor)).unwrap().day(),HebrewDate::from_ymd(5779,HebrewMonth::Adar2,NonZeroU8::new(9).unwrap())?);
-//!# Ok::<(),ConversionError>(())
+//! assert_eq!(HebrewYear::new(5779)?.get_holidays_vec(Location::Chul, &[HolidayType::Shabbos], &None::<fn(&HebrewDate)>)[0].name(), Name::Shabbos(Parsha::Vayelech));
+//! assert_eq!(HebrewYear::new(5779)?.get_holidays_vec(Location::Chul, &[HolidayType::SpecialParsha], &None::<fn(&HebrewDate)> ).iter().find(|x| x.name() == Name::SpecialParsha(SpecialParsha::Zachor)).unwrap().day(),HebrewDate::from_ymd(5779,HebrewMonth::Adar2,NonZeroU8::new(9).unwrap())?);
+//! # Ok::<(),ConversionError>(())
 //!
 //!```
 //!
@@ -85,6 +85,7 @@
 //!
 //!This library won't work for years before 3764 (4).
 
+pub mod daily_study;
 pub mod hebrew;
 pub mod holidays;
 mod internal;

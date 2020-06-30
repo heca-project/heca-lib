@@ -2,19 +2,26 @@ use std::convert::{TryFrom, TryInto};
 
 use crate::hebrew::Date;
 use crate::holidays::{
+    chabad_holidays::{self},
     chol::{self},
+    israeli_holidays::{self},
     minor_holiday::{self},
     omer::{self},
     shabbos::{self},
     shabbos_mevarchim,
     special_parsha::{self},
     yom_tov::{self},
-    Holiday,
+    DailyStudy, Holiday,
+};
+
+use crate::daily_study::{
+    daf_yomi::{self},
+    rambam, yerushalmi_yomi,
 };
 
 use crate::internal::calendar::{CHALAKIM_BETWEEN_MOLAD, FIRST_MOLAD};
 use crate::prelude::*;
-use std::num::NonZeroU8;
+use std::{num::NonZeroU8, ops::Add};
 use tinyvec::TinyVec;
 
 use crate::hebrew::Month;
@@ -22,7 +29,10 @@ use crate::internal::calendar::{
     get_rosh_hashana, months_per_year, return_year_sched, CHALAKIM_PER_DAY, CHALAKIM_PER_HOUR,
     CHALAKIM_PER_MINUTE, EPOCH, FIRST_YEAR, YEAR_SCHED,
 };
-use crate::prelude::{ConversionError, Molad};
+use crate::{
+    prelude::{ConversionError, Molad},
+    secular::{Days, Hours},
+};
 
 /// HebrewYear holds data on a given year. It's faster to get multiple HebrewDates from
 /// an existing HebrewYear rather than generating each one on its own.
@@ -53,7 +63,7 @@ impl Year {
     }
 
     #[inline]
-    pub(crate) fn unchecked_new(year: u32) -> Year {
+    pub(crate) fn new_unchecked(year: u32) -> Year {
         let cur_rh = get_rosh_hashana(year);
         let next_rh = get_rosh_hashana(year + 1);
         let days_since_epoch = cur_rh.0 as u32;
@@ -75,7 +85,7 @@ impl Year {
     }
 
     #[inline]
-    pub fn new(year: u32) -> Result<Year, ConversionError> {
+    pub fn new_opt(year: u32) -> Result<Year, ConversionError> {
         //! Returns a new HebrewYear on success or a ConversionError on failure.
         //!
         //! # Arguments
@@ -85,7 +95,22 @@ impl Year {
         if year < (FIRST_YEAR + 1) as u32 {
             Err(ConversionError::YearTooSmall)
         } else {
-            Ok(Year::unchecked_new(year))
+            Ok(Year::new_unchecked(year))
+        }
+    }
+
+    #[inline]
+    pub fn new(year: u32) -> Year {
+        //! Returns a new HebrewYear on success or a ConversionError on failure.
+        //!
+        //! # Arguments
+        //!
+        //! `year` - The Hebrew year
+        //!
+        if year < (FIRST_YEAR + 1) as u32 {
+            panic!("{:?}", ConversionError::YearTooSmall)
+        } else {
+            Year::new_unchecked(year)
         }
     }
 
@@ -334,28 +359,42 @@ impl Year {
     /// assert_eq!(count,4);
     /// # Ok::<(),ConversionError>(())
     /// ```
-    pub fn get_holidays<S: Clone, T: Fn(&Date) -> S>(
+    pub fn get_holidays<S: Clone, T: Clone + Fn(Date) -> S, U: Clone + Fn(Date) -> S>(
         &self,
         location: Location,
         yt_types: &[HolidayType],
         array_vec: &mut TinyVec<impl tinyvec::Array<Item = Option<Holiday<S>>>>,
-        candle_lighting_func: &Option<T>,
+        shkiya_func: Option<T>,
+        tzeis_func: Option<U>,
     ) {
         if yt_types.contains(&HolidayType::YomTov) {
-            yom_tov::get(&self, location, array_vec, &candle_lighting_func)
+            yom_tov::get(
+                &self,
+                location,
+                array_vec,
+                shkiya_func.clone(),
+                tzeis_func.clone(),
+            )
         }
         if yt_types.contains(&HolidayType::Chol) {
             chol::get(self, array_vec);
         }
         if yt_types.contains(&HolidayType::Shabbos) {
             let mut ignore_vec = tinyvec::TinyVec::<[Option<Holiday<S>>; 32]>::new();
-            yom_tov::get(&self, location, &mut ignore_vec, &None::<fn(&Date) -> S>);
+            yom_tov::get(
+                &self,
+                location,
+                &mut ignore_vec,
+                None::<fn(Date) -> S>,
+                None::<fn(Date) -> S>,
+            );
             shabbos::get(
                 self,
                 location,
                 &ignore_vec,
                 array_vec,
-                &candle_lighting_func,
+                shkiya_func,
+                tzeis_func,
             );
         }
         if yt_types.contains(&HolidayType::SpecialParsha) {
@@ -370,20 +409,54 @@ impl Year {
         if yt_types.contains(&HolidayType::ShabbosMevarchim) {
             shabbos_mevarchim::get(self, array_vec)
         }
+        if yt_types.contains(&HolidayType::IsraeliHolidays(true)) {
+            israeli_holidays::get(self, array_vec, true)
+        } else if yt_types.contains(&HolidayType::IsraeliHolidays(false)) {
+            israeli_holidays::get(self, array_vec, false)
+        }
+        if yt_types.contains(&HolidayType::ChabadHolidays) {
+            chabad_holidays::get(self, array_vec)
+        }
     }
 
-    pub fn get_holidays_vec<S: Clone, T: Fn(&Date) -> S>(
+    pub fn get_holidays_vec<S: Clone, T: Clone + Fn(Date) -> S, U: Clone + Fn(Date) -> S>(
         &self,
         location: Location,
         yt_types: &[HolidayType],
-        candle_lighting_func: &Option<T>,
+        shkiya_func: Option<T>,
+        tzeis_func: Option<U>,
     ) -> Vec<Holiday<S>> {
         let mut collect_vec = tinyvec::TinyVec::<[Option<Holiday<S>>; 32]>::new();
-        self.get_holidays(location, yt_types, &mut collect_vec, candle_lighting_func);
+        self.get_holidays(
+            location,
+            yt_types,
+            &mut collect_vec,
+            shkiya_func,
+            tzeis_func,
+        );
         collect_vec
             .into_iter()
             .filter_map(|x| if x.is_some() { x } else { None })
             .collect()
+    }
+
+    pub fn get_daily_study<S: Clone, T: Fn(Date) -> S>(
+        &self,
+        daily_study_type: &[DailyStudyType],
+        array_vec: &mut TinyVec<impl tinyvec::Array<Item = Option<DailyStudy>>>,
+    ) {
+        if daily_study_type.contains(&DailyStudyType::DafYomi) {
+            daf_yomi::get(&self, array_vec)
+        }
+        if daily_study_type.contains(&DailyStudyType::YerushalmiYomi) {
+            yerushalmi_yomi::get(&self, array_vec)
+        }
+        if daily_study_type.contains(&DailyStudyType::RambamOneChapter) {
+            rambam::one_chapter::get(&self, array_vec)
+        }
+        if daily_study_type.contains(&DailyStudyType::RambamThreeChapters) {
+            rambam::three_chapters::get(&self, array_vec)
+        }
     }
     /// Returns the Molad of a given month, or a ConversionError if trying to get Molad of a month which is does not exist in that year.
     ///
@@ -436,9 +509,72 @@ impl Year {
     }
 }
 
+impl Add<Days> for Date {
+    type Output = Date;
+    fn add(self, rhs: Days) -> Self::Output {
+        let amount_days_in_year: u16 = self.year().sched.iter().map(|x| *x as u16).sum();
+        let mut remainder: u16 = self.day().get() as u16
+            + (0..u8::from(self.month()))
+                .map(|x| self.year().sched[x as usize] as u16)
+                .sum::<u16>()
+            + rhs.days() as u16;
+
+        if amount_days_in_year < remainder {
+            remainder -= amount_days_in_year;
+            Date {
+                day: NonZeroU8::new(1).unwrap(),
+                month: Month::Tishrei,
+                year: Year::new(self.year().year + 1),
+            } + Duration::days(remainder as i32 - 1)
+        } else {
+            let year = self.year;
+
+            let mut month: u64 = 0;
+            for days_in_month in self.year().sched.iter() {
+                if remainder <= u16::from(*days_in_month) {
+                    break;
+                }
+                month += 1;
+                remainder -= u16::from(*days_in_month);
+            }
+            Date {
+                year,
+                month: Month::try_from(month as u8).unwrap(),
+                day: NonZeroU8::new((remainder) as u8).unwrap(),
+            }
+        }
+    }
+}
+
+#[test]
+fn test_add_date_1() {
+    let date: Date = Year::new(5770).and_month_day(Month::Elul, 29);
+    assert_eq!(
+        date + Duration::days(1),
+        Year::new(5771).and_month_day(Month::Tishrei, 1)
+    );
+}
+
+#[test]
+fn test_add_date_2() {
+    let date: Date = Year::new(5770).and_month_day(Month::Elul, 28);
+    assert_eq!(
+        date + Duration::days(1),
+        Year::new(5770).and_month_day(Month::Elul, 29)
+    );
+}
+
+#[test]
+fn test_add_date_3() {
+    let date: Date = Year::new(5770).and_month_day(Month::Tishrei, 1);
+    assert_eq!(
+        date + Duration::days(1),
+        Year::new(5770).and_month_day(Month::Tishrei, 2)
+    );
+}
 #[test]
 fn test_get_molad() {
-    let year = crate::hebrew::Year::new(5780).unwrap();
+    let year = crate::hebrew::Year::new(5780);
     let molad: crate::secular::Date = year.get_molad(Month::Cheshvan).unwrap().into();
     assert_eq!(
         molad,
@@ -572,7 +708,7 @@ mod test {
 
         for i in 4000..5000 {
             println!("{}", i);
-            Year::new(i).unwrap();
+            Year::new(i);
         }
     }
 
@@ -581,7 +717,7 @@ mod test {
         use super::*;
         for i in 3765..9999 {
             println!("{}", i);
-            let y = Year::new(i).unwrap();
+            let y = Year::new(i);
             let t = y.year_type();
             match t {
                 YearSchedule::GaChaH
@@ -615,7 +751,7 @@ mod test {
 #[test]
 fn test_month_schedule() {
     for i in 2..6000 {
-        let y = Year::new(i).unwrap();
+        let y = Year::new(i);
         y.month_schedule();
     }
 }
@@ -624,4 +760,263 @@ pub enum MonthSchedule {
     Chaseir,
     Kesidra,
     Malei,
+}
+
+#[test]
+fn ensure_no_panic() {
+    for i in 5700..10_000 {
+        let result = Year::new(i).get_holidays_vec(
+            Location::Chul,
+            &[
+                HolidayType::IsraeliHolidays(false),
+                HolidayType::ChabadHolidays,
+                HolidayType::MinorHolidays,
+                HolidayType::YomTov,
+                HolidayType::Shabbos,
+                HolidayType::SpecialParsha,
+                HolidayType::Chol,
+            ],
+            Some(|x| Some(5)),
+            Some(|x| Some(6)),
+        );
+    }
+}
+
+#[test]
+fn ensure_shabbos_on_shabbos() {
+    for i in 5700..10_000 {
+        let result = Year::new(i).get_holidays_vec(
+            Location::Chul,
+            &[
+                HolidayType::Shabbos,
+                HolidayType::ShabbosMevarchim,
+                HolidayType::SpecialParsha,
+            ],
+            Some(|x| Some(5)),
+            Some(|x| Some(6)),
+        );
+        result.iter().for_each(|x| {
+            if x.day().day_of_week() != Day::Shabbos {
+                panic!("{:?}", x);
+            }
+        });
+    }
+}
+
+#[test]
+fn ensure_first_day_of_selichos_on_sunday() {
+    for i in 5700..10_000 {
+        let result = Year::new(i).get_holidays_vec(
+            Location::Chul,
+            &[HolidayType::MinorHolidays],
+            Some(|x| Some(5)),
+            Some(|x| Some(6)),
+        );
+        result.iter().for_each(|x| {
+            if x.name() == Name::MinorHoliday(minor_holiday::MinorHoliday::LeilSlichos)
+                && x.day().day_of_week() != Day::Sunday
+            {
+                panic!("{:?}", x.day().day_of_week());
+            }
+        });
+    }
+}
+
+#[test]
+fn ensure_shabbos_chazon_is_on_shabbos() {
+    for i in 5700..10_000 {
+        let result = Year::new(i).get_holidays_vec(
+            Location::Chul,
+            &[HolidayType::MinorHolidays],
+            Some(|x| Some(5)),
+            Some(|x| Some(6)),
+        );
+        result.iter().for_each(|x| {
+            if x.name() == Name::MinorHoliday(minor_holiday::MinorHoliday::ShabbosChazon)
+                && x.day().day_of_week() != Day::Shabbos
+            {
+                panic!("{:?}", x);
+            }
+        });
+    }
+}
+
+#[test]
+fn ensure_shabbos_nachamu_is_on_shabbos() {
+    for i in 5700..10_000 {
+        let result = Year::new(i).get_holidays_vec(
+            Location::Chul,
+            &[HolidayType::MinorHolidays],
+            Some(|x| Some(5)),
+            Some(|x| Some(6)),
+        );
+        result.iter().for_each(|x| {
+            if x.name() == Name::MinorHoliday(minor_holiday::MinorHoliday::ShabbosNachamu)
+                && x.day().day_of_week() != Day::Shabbos
+            {
+                panic!("{:?}", x);
+            }
+        });
+    }
+}
+
+#[test]
+fn ensure_shabbos_nachamu_is_one_week_before_chazon() {
+    for i in 5700..10_000 {
+        let result = Year::new(i).get_holidays_vec(
+            Location::Chul,
+            &[HolidayType::MinorHolidays],
+            Some(|x| Some(5)),
+            Some(|x| Some(6)),
+        );
+        let shabbos_chazon = result
+            .iter()
+            .find(|x| x.name() == Name::MinorHoliday(minor_holiday::MinorHoliday::ShabbosChazon));
+        let shabbos_nachamu = result
+            .iter()
+            .find(|x| x.name() == Name::MinorHoliday(minor_holiday::MinorHoliday::ShabbosNachamu));
+        assert_eq!(
+            (shabbos_chazon.unwrap().day().clone() - shabbos_nachamu.unwrap().day()).get_days(),
+            Duration::days(-7)
+        );
+    }
+}
+
+#[test]
+fn ensure_all_days_of_sukkos_come_after_another() {
+    for i in 10..10_000 {
+        let yom_tovs = Year::new(i).get_holidays_vec(
+            Location::Chul,
+            &[HolidayType::YomTov],
+            Some(|x| Some(5)),
+            Some(|x| Some(6)),
+        );
+
+        let days_of_sukkos = [
+            yom_tovs
+                .iter()
+                .find(|x| x.name() == Name::YomTov(YomTov::Sukkos1))
+                .unwrap(),
+            yom_tovs
+                .iter()
+                .find(|x| x.name() == Name::YomTov(YomTov::Sukkos2))
+                .unwrap(),
+            yom_tovs
+                .iter()
+                .find(|x| x.name() == Name::YomTov(YomTov::Sukkos3))
+                .unwrap(),
+            yom_tovs
+                .iter()
+                .find(|x| x.name() == Name::YomTov(YomTov::Sukkos4))
+                .unwrap(),
+            yom_tovs
+                .iter()
+                .find(|x| x.name() == Name::YomTov(YomTov::Sukkos5))
+                .unwrap(),
+            yom_tovs
+                .iter()
+                .find(|x| x.name() == Name::YomTov(YomTov::Sukkos6))
+                .unwrap(),
+            yom_tovs
+                .iter()
+                .find(|x| x.name() == Name::YomTov(YomTov::Sukkos7))
+                .unwrap(),
+        ];
+        days_of_sukkos
+            .iter()
+            .take(days_of_sukkos.len() - 1)
+            .enumerate()
+            .for_each(|(index, holiday)| {
+                assert_eq!(
+                    (days_of_sukkos[index + 1].day() - days_of_sukkos[index].day()).get_days(),
+                    Duration::days(1)
+                );
+            })
+    }
+}
+
+#[test]
+fn ensure_all_days_of_pesach_come_after_another() {
+    for i in 10..10_000 {
+        let yom_tovs = Year::new(i).get_holidays_vec(
+            Location::Chul,
+            &[HolidayType::YomTov],
+            Some(|x| Some(5)),
+            Some(|x| Some(6)),
+        );
+
+        let days_of_pesach = [
+            yom_tovs
+                .iter()
+                .find(|x| x.name() == Name::YomTov(YomTov::Pesach1))
+                .unwrap(),
+            yom_tovs
+                .iter()
+                .find(|x| x.name() == Name::YomTov(YomTov::Pesach2))
+                .unwrap(),
+            yom_tovs
+                .iter()
+                .find(|x| x.name() == Name::YomTov(YomTov::Pesach3))
+                .unwrap(),
+            yom_tovs
+                .iter()
+                .find(|x| x.name() == Name::YomTov(YomTov::Pesach4))
+                .unwrap(),
+            yom_tovs
+                .iter()
+                .find(|x| x.name() == Name::YomTov(YomTov::Pesach5))
+                .unwrap(),
+            yom_tovs
+                .iter()
+                .find(|x| x.name() == Name::YomTov(YomTov::Pesach6))
+                .unwrap(),
+            yom_tovs
+                .iter()
+                .find(|x| x.name() == Name::YomTov(YomTov::Pesach7))
+                .unwrap(),
+        ];
+        days_of_pesach
+            .iter()
+            .take(days_of_pesach.len() - 1)
+            .enumerate()
+            .for_each(|(index, holiday)| {
+                assert_eq!(
+                    (days_of_pesach[index + 1].day() - days_of_pesach[index].day()).get_days(),
+                    Duration::days(1)
+                );
+            })
+    }
+}
+
+#[test]
+fn ensure_all_days_of_shavuos_come_after_another() {
+    for i in 10..10_000 {
+        let yom_tovs = Year::new(i).get_holidays_vec(
+            Location::Chul,
+            &[HolidayType::YomTov],
+            Some(|x| Some(5)),
+            Some(|x| Some(6)),
+        );
+
+        let days_of_shavuos = [
+            yom_tovs
+                .iter()
+                .find(|x| x.name() == Name::YomTov(YomTov::Shavuos1))
+                .unwrap(),
+            yom_tovs
+                .iter()
+                .find(|x| x.name() == Name::YomTov(YomTov::Shavuos2))
+                .unwrap(),
+        ];
+        days_of_shavuos
+            .iter()
+            .take(days_of_shavuos.len() - 1)
+            .enumerate()
+            .for_each(|(index, holiday)| {
+                assert_eq!(
+                    (days_of_shavuos[index + 1].day() - days_of_shavuos[index].day()).get_days(),
+                    Duration::days(1)
+                );
+            })
+    }
 }

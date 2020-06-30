@@ -180,6 +180,17 @@ pub enum HolidayType {
     Omer,
     MinorHolidays,
     ShabbosMevarchim,
+    IsraeliHolidays(bool),
+    ChabadHolidays,
+}
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+#[non_exhaustive]
+pub enum DailyStudyType {
+    DafYomi,
+    YerushalmiYomi,
+    RambamThreeChapters,
+    RambamOneChapter,
 }
 
 /// A Hebrew year can be defined by three variables:
@@ -279,4 +290,38 @@ pub enum YearSchedule {
     HaShaG,
     ZaChaG,
     ZaShaH,
+}
+
+pub trait VecLike<A> {
+    fn extend<T: Iterator<Item = A>>(&mut self, iter: T);
+    fn resize(&mut self, new_len: usize, new_val: A);
+}
+use tinyvec::{Array, TinyVec};
+impl<A: Array + Clone> VecLike<A::Item> for TinyVec<A>
+where
+    <A as Array>::Item: std::clone::Clone,
+{
+    #[inline]
+    fn extend<T: Iterator<Item = A::Item>>(&mut self, iter: T) {
+        std::iter::Extend::extend(self, iter);
+    }
+    fn resize(&mut self, new_len: usize, new_val: A::Item)
+    where
+        A::Item: Clone,
+    {
+        self.resize(new_len, new_val);
+    }
+}
+
+impl<A> VecLike<A> for Vec<A>
+where
+    A: Clone,
+{
+    #[inline]
+    fn extend<T: Iterator<Item = A>>(&mut self, iter: T) {
+        std::iter::Extend::extend(self, iter);
+    }
+    fn resize(&mut self, new_len: usize, new_val: A) {
+        self.resize(new_len, new_val)
+    }
 }

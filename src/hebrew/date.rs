@@ -21,18 +21,20 @@ impl TryFrom<crate::secular::Date> for Date {
 impl Eq for Date {}
 impl PartialEq for Date {
     fn eq(&self, other: &Date) -> bool {
-        self.day == other.day && self.month == other.month && self.year() == other.year()
+        self.day == other.day
+            && self.month == other.month
+            && self.year().year() == other.year().year()
     }
 }
 
 use super::Year;
-use calendar::{day_of_last_rh, DAYS_BETWEEN_RH_AND_EPOCH, EPOCH, FIRST_RH};
-use std::cmp::Ordering;
+use calendar::{day_of_last_rh, CHALAKIM_PER_DAY, DAYS_BETWEEN_RH_AND_EPOCH, EPOCH, FIRST_RH};
+use std::{cmp::Ordering, ops::Sub};
 impl Ord for Date {
     fn cmp(&self, other: &Date) -> Ordering {
-        if self.year() < other.year() {
+        if self.year().year() < other.year().year() {
             Ordering::Less
-        } else if self.year() > other.year() {
+        } else if self.year().year() > other.year().year() {
             Ordering::Greater
         } else if (self.month as i32) < (other.month as i32) {
             Ordering::Less
@@ -46,6 +48,20 @@ impl Ord for Date {
             Ordering::Equal
         }
     }
+}
+
+#[test]
+fn test_cmp_hebrew_date() {
+    assert_eq!(
+        Year::new(5740).and_month_day(Month::Shvat, 15)
+            < Year::new(5741).and_month_day(Month::Tishrei, 1),
+        true
+    );
+    assert_eq!(
+        Year::new(5760).and_month_day(Month::Tishrei, 1)
+            < Year::new(5760).and_month_day(Month::Tishrei, 2),
+        true
+    );
 }
 
 impl PartialOrd for Date {
@@ -77,7 +93,7 @@ impl Date {
     /// Day must be above zero. If it's below zero, the function returns TooManyDaysInMonth. In a future release, day will be a NonZeroU8 so that it will be impossible to supply a negative number.
     #[must_use]
     pub fn from_ymd(year: u32, month: Month, day: u8) -> Date {
-        Year::new(year).unwrap().and_month_day(month, day)
+        Year::new(year).and_month_day(month, day)
     }
 
     #[must_use]
@@ -134,14 +150,12 @@ impl Date {
         }
         let days_since_first_rh = ((date - *FIRST_RH).days() + 2) as u32;
 
-        let hebrew_year =
-            Year::new(day_of_last_rh(days_since_first_rh).try_into().unwrap()).unwrap();
+        let hebrew_year = Year::new(day_of_last_rh(days_since_first_rh).try_into().unwrap());
         Ok(hebrew_year.get_hebrewdate_from_days_after_rh(days_since_first_rh))
     }
     pub(crate) fn from_days_since_epoch(days_since_epoch: u32) -> Date {
         let days_since_first_rh: u32 = days_since_epoch - DAYS_BETWEEN_RH_AND_EPOCH as u32;
-        let hebrew_year =
-            Year::new(day_of_last_rh(days_since_first_rh).try_into().unwrap()).unwrap();
+        let hebrew_year = Year::new(day_of_last_rh(days_since_first_rh).try_into().unwrap());
         hebrew_year.get_hebrewdate_from_days_after_rh(days_since_first_rh)
     }
     pub(crate) fn to_gregorian(&self) -> crate::secular::Date {
@@ -178,8 +192,32 @@ impl Date {
 
     #[inline]
     #[must_use]
-    pub fn year(&self) -> u32 {
-        self.year.year
+    pub fn year(&self) -> Year {
+        self.year
+    }
+
+    pub(crate) fn to_chalakim(&self) -> u64 {
+        let month_num: u8 = self.month.into();
+
+        (self.year().days_since_epoch as u64 * CHALAKIM_PER_DAY as u64)
+            + self
+                .year()
+                .sched
+                .into_iter()
+                .enumerate()
+                .filter(|x| x.0 < month_num as usize)
+                .fold(0 as u64, |old, new| old + *new.1 as u64)
+                * (CHALAKIM_PER_DAY as u64)
+            + (self.day().get() as u64 * CHALAKIM_PER_DAY as u64)
+    }
+}
+
+impl Sub<Date> for Date {
+    type Output = Duration;
+    fn sub(self, rhs: Date) -> Self::Output {
+        Duration {
+            chalakim: self.to_chalakim() as i64 - rhs.to_chalakim() as i64,
+        }
     }
 }
 
@@ -202,19 +240,102 @@ mod tests {
         use crate::hebrew::{Month, Year};
         use crate::prelude::*;
         assert_eq!(
-            Year::new(5780)
-                .unwrap()
-                .and_month_day(Month::Iyar, 18)
-                .day_of_week(),
+            Year::new(5780).and_month_day(Month::Iyar, 18).day_of_week(),
             Day::Tuesday
         );
 
         assert_eq!(
             Year::new(5700)
-                .unwrap()
                 .and_month_day(Month::Adar1, 29)
                 .day_of_week(),
             Day::Shabbos
         );
     }
+}
+
+#[test]
+fn test_subtract_day() {
+    let date1 = Year::new(5751).and_month_day(Month::Tishrei, 1);
+    let date2 = Year::new(5751).and_month_day(Month::Tishrei, 2);
+    assert_eq!(
+        (date2 - date1).get_chalakim().chalakim(),
+        CHALAKIM_PER_DAY as i32
+    );
+}
+
+#[test]
+fn test_subtract_month() {
+    let date1 = Year::new(5751).and_month_day(Month::Tishrei, 29);
+    let date2 = Year::new(5751).and_month_day(Month::Tishrei, 30);
+    eprintln!("{}", (date2 - date1).get_chalakim().chalakim() / 1080);
+    assert_eq!(
+        (date2 - date1).get_chalakim().chalakim(),
+        (CHALAKIM_PER_DAY as i32)
+    );
+}
+
+#[test]
+fn test_subtract_month_1() {
+    let date1 = Year::new(5751).and_month_day(Month::Tishrei, 30);
+    let date2 = Year::new(5751).and_month_day(Month::Cheshvan, 1);
+    eprintln!("{}", (date2 - date1).get_chalakim().chalakim() / 1080);
+    assert_eq!(
+        (date2 - date1).get_chalakim().chalakim(),
+        (CHALAKIM_PER_DAY as i32)
+    );
+}
+
+#[test]
+fn test_subtract_month_2() {
+    let date1 = Year::new(5751).and_month_day(Month::Tishrei, 1);
+    let date2 = Year::new(5751).and_month_day(Month::Cheshvan, 1);
+    eprintln!("{}", (date2 - date1).get_chalakim().chalakim() / 1080);
+    assert_eq!(
+        (date2 - date1).get_chalakim().chalakim(),
+        (CHALAKIM_PER_DAY as i32) * 30
+    );
+}
+
+#[test]
+fn test_subtract_year() {
+    let date1 = Year::new(5751).and_month_day(Month::Tishrei, 1);
+    let date2 = Year::new(5752).and_month_day(Month::Tishrei, 1);
+    eprintln!("{}", (date2 - date1).get_chalakim().chalakim() / 1080);
+    assert_eq!(
+        (date2 - date1).get_chalakim().chalakim(),
+        (CHALAKIM_PER_DAY as i32) * 354
+    );
+}
+
+#[test]
+fn test_subtract_full() {
+    let date1 = Year::new(5751).and_month_day(Month::Tishrei, 1);
+    let date2 = Year::new(5751).and_month_day(Month::Elul, 29);
+    eprintln!("{}", (date2 - date1).get_chalakim().chalakim() / 1080);
+    assert_eq!(
+        (date2 - date1).get_chalakim().chalakim(),
+        (CHALAKIM_PER_DAY as i32) * 353
+    );
+}
+
+#[test]
+fn check_day_of_week() {
+    assert_eq!(
+        Year::new(5700)
+            .and_month_day(Month::Tishrei, 1)
+            .day_of_week(),
+        Day::Thursday
+    );
+    assert_eq!(
+        Year::new(5700)
+            .and_month_day(Month::Nissan, 15)
+            .day_of_week(),
+        Day::Tuesday
+    );
+    assert_eq!(
+        Year::new(5701)
+            .and_month_day(Month::Tishrei, 1)
+            .day_of_week(),
+        Day::Thursday
+    );
 }

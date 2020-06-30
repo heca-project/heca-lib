@@ -47,6 +47,7 @@ pub(crate) fn get<T: Clone>(
         },
         name: Name::SpecialParsha(SpecialParsha::Shekalim),
         candle_lighting: None,
+        tzeis: None,
     };
     let zachor = Holiday {
         //Parshas Zachor is read on the Shabbos before Purim.
@@ -67,6 +68,7 @@ pub(crate) fn get<T: Clone>(
         },
         name: Name::SpecialParsha(SpecialParsha::Zachor),
         candle_lighting: None,
+        tzeis: None,
     };
     let parah = Holiday {
         //Parshas Parah is read on the Shabbos before Hachodesh.
@@ -87,6 +89,7 @@ pub(crate) fn get<T: Clone>(
         },
         name: Name::SpecialParsha(SpecialParsha::Parah),
         candle_lighting: None,
+        tzeis: None,
     };
     let hachodesh = Holiday {
         //Parshas Hachodesh is read on the Shabbos before Rosh Chodesh Nissan, or on Rosh Chodesh
@@ -112,6 +115,7 @@ pub(crate) fn get<T: Clone>(
         },
         name: Name::SpecialParsha(SpecialParsha::HaChodesh),
         candle_lighting: None,
+        tzeis: None,
     };
 
     array_vec.extend_from_slice(&[Some(shekalim), Some(zachor), Some(parah), Some(hachodesh)]);

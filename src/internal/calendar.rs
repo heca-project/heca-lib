@@ -206,47 +206,4 @@ mod tests {
             orig_date = orig_date + Duration::days(1);
         }
     }
-
-    #[test]
-    fn test_rh_against_working_list() {
-        test_against_working_list("RoshHashanaList", 1, Month::Tishrei);
-    }
-    #[test]
-    fn test_adar1_against_working_list() {
-        test_against_working_list("Adar1List", 1, Month::Adar1);
-    }
-
-    fn test_against_working_list(filename: &str, day: u8, month: Month) {
-        use crate::hebrew::Date;
-        let file_contents = std::fs::read_to_string(format!("./testing/{}", filename)).unwrap();
-        let mut error = false;
-        file_contents
-            .split("\n")
-            .filter(|x| *x != "")
-            .for_each(|x| {
-                let res = x.split(" ").collect::<Vec<&str>>();
-                if res.len() != 1 {
-                    let eng_day = Date::from_ymd(res[0].parse::<u32>().unwrap(), month, day as u8)
-                        .to_gregorian()
-                        + Duration::days(1);
-                    let sp = res[1].split("/").collect::<Vec<&str>>();
-                    let (month, day, year) = (sp[0], sp[1], sp[2]);
-                    if month.parse::<u64>().unwrap() as u8 != eng_day.month() {
-                        eprintln!("{}-{}-{}, {:?}", year, month, day, eng_day);
-                        error = true;
-                    }
-                    if day.parse::<u64>().unwrap() as u8 != eng_day.day() {
-                        eprintln!("{}-{}-{}, {:?}", year, month, day, eng_day);
-                        error = true;
-                    }
-                    if year.parse::<u64>().unwrap() as i32 != eng_day.year() {
-                        eprintln!("{}-{}-{}, {:?}", year, month, day, eng_day);
-                        error = true
-                    }
-                }
-                if error {
-                    panic!("Error");
-                }
-            });
-    }
 }

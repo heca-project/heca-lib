@@ -1,4 +1,4 @@
-use crate::prelude::Day;
+use crate::{internal::calendar::CHALAKIM_PER_HOUR, prelude::Day};
 use std::convert::TryInto;
 use std::ops::{Add, Sub};
 
@@ -312,9 +312,9 @@ impl From<crate::hebrew::Date> for Date {
         orig.to_gregorian()
     }
 }
-#[derive(Debug, PartialEq, Eq, Ord, PartialOrd)]
+#[derive(Debug, PartialEq, Eq, Ord, PartialOrd, Clone, Copy)]
 pub struct Duration {
-    days: i32,
+    pub(crate) chalakim: i64,
 }
 #[derive(Debug, PartialEq, Eq, Ord, PartialOrd)]
 pub struct Days {
@@ -357,7 +357,7 @@ impl Seconds {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Ord, PartialOrd)]
+#[derive(Debug, PartialEq, Eq, Ord, PartialOrd, Clone, Copy)]
 pub struct Chalakim {
     chalakim: i32,
 }
@@ -369,6 +369,36 @@ impl Chalakim {
 }
 
 impl Duration {
+    pub fn get_chalakim(&self) -> Chalakim {
+        Chalakim {
+            chalakim: self.chalakim as i32,
+        }
+    }
+
+    pub fn get_seconds(&self) -> Seconds {
+        Seconds {
+            seconds: ((self.chalakim * 60 * 60) / CHALAKIM_PER_HOUR as i64) as i32,
+        }
+    }
+
+    pub fn get_minutes(&self) -> Minutes {
+        Minutes {
+            minutes: ((self.chalakim * 60) / CHALAKIM_PER_HOUR as i64) as i32,
+        }
+    }
+
+    pub fn get_hours(&self) -> Hours {
+        Hours {
+            hours: (self.chalakim as i32) / (CHALAKIM_PER_HOUR as i32),
+        }
+    }
+
+    pub fn get_days(&self) -> Days {
+        Days {
+            days: (self.chalakim as i32) / (CHALAKIM_PER_HOUR as i32) / 24,
+        }
+    }
+
     pub fn days(days: i32) -> Days {
         Days { days }
     }

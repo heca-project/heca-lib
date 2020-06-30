@@ -7,12 +7,13 @@ use crate::{
 use tinyvec::TinyVec;
 
 /// This is based on the Biyur Halacha to Orach Chaim 428:4:3
-pub(crate) fn get<S: Clone, T: Fn(&Date) -> S>(
+pub(crate) fn get<S: Clone, T: Fn(Date) -> S, U: Fn(Date) -> S>(
     year: &Year,
     location: Location,
     ignore_dates: &TinyVec<impl tinyvec::Array<Item = Option<Holiday<S>>>>,
     return_vec: &mut TinyVec<impl tinyvec::Array<Item = Option<Holiday<S>>>>,
-    candle_lighting_func: &Option<T>,
+    shkiya_func: Option<T>,
+    tzeis_func: Option<U>,
 ) {
     let rh_dow = year.day_of_rh;
     let rh_dow_next = year.day_of_next_rh;
@@ -105,15 +106,23 @@ pub(crate) fn get<S: Clone, T: Fn(&Date) -> S>(
     } else {
         parsha_vec.push(Parsha::NitzavimVayelech);
     }
-    return_vec.extend(regular_shabbosim_list.iter().enumerate().map(|(i, &day)| {
-        let candle_lighting = candle_lighting_func.as_ref().map(|ref x| x(&day));
-        let name = Name::Shabbos(parsha_vec[i]);
-        Some(Holiday {
-            day,
-            name,
-            candle_lighting,
-        })
-    }))
+    return_vec.extend(
+        regular_shabbosim_list
+            .into_iter()
+            .enumerate()
+            .map(|(i, day)| {
+                let candle_lighting = shkiya_func.as_ref().map(|ref x| x(day.clone()));
+                let tzeis = tzeis_func.as_ref().map(|ref x| x(day.clone()));
+                let name = Name::Shabbos(parsha_vec[i]);
+
+                Some(Holiday {
+                    day,
+                    name,
+                    candle_lighting,
+                    tzeis,
+                })
+            }),
+    )
 }
 
 pub(crate) fn get_shabbosim<S: Clone>(

@@ -1020,3 +1020,60 @@ fn ensure_all_days_of_shavuos_come_after_another() {
             })
     }
 }
+
+#[test]
+fn ensure_all_days_of_chanuka_come_after_another() {
+    for i in 10..10_000 {
+        let weekday_holidays = Year::new(i).get_holidays_vec(
+            Location::Chul,
+            &[HolidayType::Chol],
+            Some(|x| Some(5)),
+            Some(|x| Some(6)),
+        );
+
+        let days_of_chanuka = [
+            weekday_holidays
+                .iter()
+                .find(|x| x.name() == Name::Chol(Chol::Chanukah1))
+                .unwrap(),
+            weekday_holidays
+                .iter()
+                .find(|x| x.name() == Name::Chol(Chol::Chanukah2))
+                .unwrap(),
+            weekday_holidays
+                .iter()
+                .find(|x| x.name() == Name::Chol(Chol::Chanukah3))
+                .unwrap(),
+            weekday_holidays
+                .iter()
+                .find(|x| x.name() == Name::Chol(Chol::Chanukah4))
+                .unwrap(),
+            weekday_holidays
+                .iter()
+                .find(|x| x.name() == Name::Chol(Chol::Chanukah5))
+                .unwrap(),
+            weekday_holidays
+                .iter()
+                .find(|x| x.name() == Name::Chol(Chol::Chanukah6))
+                .unwrap(),
+            weekday_holidays
+                .iter()
+                .find(|x| x.name() == Name::Chol(Chol::Chanukah7))
+                .unwrap(),
+            weekday_holidays
+                .iter()
+                .find(|x| x.name() == Name::Chol(Chol::Chanukah8))
+                .unwrap(),
+        ];
+        days_of_chanuka
+            .iter()
+            .take(days_of_chanuka.len() - 1)
+            .enumerate()
+            .for_each(|(index, holiday)| {
+                assert_eq!(
+                    (days_of_chanuka[index + 1].day() - days_of_chanuka[index].day()).get_days(),
+                    Duration::days(1)
+                );
+            })
+    }
+}

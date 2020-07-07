@@ -3,7 +3,7 @@ use crate::{
     hebrew::{Date, Month, Year},
     prelude::{Day, Location},
 };
-use std::num::NonZeroU8;
+
 use tinyvec::TinyVec;
 
 #[inline]
@@ -23,7 +23,7 @@ pub(crate) fn get<S: Clone, T: Fn(Date) -> S, U: Fn(Date) -> S>(
                 day,
                 name: Name::YomTov(YomTov::RoshHashanah1),
                 candle_lighting,
-                tzeis: tzeis,
+                tzeis,
             })
         },
         {

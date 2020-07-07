@@ -11,10 +11,12 @@ pub struct Date {
     pub(crate) year: Year,
 }
 
-impl TryFrom<crate::secular::Date> for Date {
+impl TryFrom<crate::secular::Date> for (Date, Date) {
     type Error = ConversionError;
     fn try_from(orig: crate::secular::Date) -> Result<Self, Self::Error> {
-        Date::from_gregorian(orig)
+        let d1 = Date::from_gregorian(orig - Duration::days(1))?;
+        let d2 = Date::from_gregorian(orig)?;
+        Ok((d1, d2))
     }
 }
 
